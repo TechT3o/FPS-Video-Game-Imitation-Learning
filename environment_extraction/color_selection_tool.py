@@ -67,13 +67,6 @@ while 1:
         lower_color = np.array([a1, a2, a3])
         upper_color = np.array([b1, b2, b3])
         mask = cv2.inRange(hsv, lower_color, upper_color)
-        mask = cv2.erode(mask, (15, 15))
-        mask = cv2.dilate(mask, (5, 5))
-        mask = cv2.dilate(mask, (5, 5))
-        contours = cv2.drawContours(mask)
-
         res = cv2.bitwise_and(img, img, mask=mask)
-        # process mask
-        # edges = cv2.Canny(res,minval,maxval,True)
         cv2.imshow('image', cv2.resize(res, (800, 600)))
 cv2.destroyAllWindows()
