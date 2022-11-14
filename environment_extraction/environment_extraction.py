@@ -39,6 +39,12 @@ AIMLABS_CENTER = (960, 539)
 SHOOTING_WAIT = 0.4
 SECONDS_TO_RUN = 30
 
+
+class EnvironmentExtractor:
+    def __init__(self):
+        self.ocr = 0
+
+
 if __name__ == "__main__":
     start_countdown(5)
     for kappa in range(int((1/SHOOTING_WAIT))*SECONDS_TO_RUN):
