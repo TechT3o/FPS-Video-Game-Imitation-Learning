@@ -16,8 +16,11 @@ def mouse_click_at(target_coordinates: Tuple[int, int], center_coordinates: Tupl
     :param shoot_wait_time: float of time to wait after shooting
     :return: None
     """
-    win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, target_coordinates[0] - center_coordinates[0],
-                         target_coordinates[1] - center_coordinates[1], 0, 0)
+
+    ox, oy = win32api.GetCursorPos()
+    # win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, target_coordinates[0] - center_coordinates[0],
+    #                      target_coordinates[1] - center_coordinates[1], 0, 0)
+    win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, target_coordinates[0] - ox, target_coordinates[1] - oy, 0, 0)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
     time.sleep(.01)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
@@ -35,7 +38,7 @@ def start_countdown(countdown_number: int) -> None:
         time.sleep(1)
 
 
-AIMLABS_CENTER = (960, 539)
+AIMLABS_CENTER = (960, 539)  # will probably remove as cursor always locke at center, so we can grab it from win32 api
 SHOOTING_WAIT = 0.4
 SECONDS_TO_RUN = 30
 
@@ -71,7 +74,7 @@ if __name__ == "__main__":
             x = int(moment["m10"] / (moment["m00"] + 1e-5))
             y = int(moment["m01"] / (moment["m00"] + 1e-5))
             # filter by area size
-            if moment["m00"] < 200:
+            if moment["m00"] < 500:
                 continue
             # Uncomment to illustrate found targets on image
             # cv2.drawContours(img, contour, -1, (0, 0, 255), 2)
