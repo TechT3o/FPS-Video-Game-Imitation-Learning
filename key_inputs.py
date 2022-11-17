@@ -1,8 +1,10 @@
 # adapted from https://github.com/Sentdex/pygta5/blob/master/getkeys.py
+import win32api
 import win32api as wapi
 import time
 import ast
 import win32gui
+import win32evtlog
 
 # this is a list of characters to check when pressing in key_check()
 keyList = ["\b"]
@@ -30,8 +32,8 @@ class POINT(Structure):
 
 def mouse_check():
     pt = POINT()
-    # windll.user32.GetCursorPos(byref(pt))
-    print(win32gui.SetCapture(win32gui.GetFocus()))
+    windll.user32.GetCursorPos(byref(pt))
+    # print(win32gui.SetCapture(win32gui.GetFocus()))
     # flags, hcursor, (x, y) = win32gui.GetCursorInfo()
     # print(x,y)
     return pt.x, pt.y
@@ -72,9 +74,9 @@ def mouse_log_test():
 
         current_status_l, clicked_l, held_down_l = mouse_l_click_check(previous_status_l)
         current_status_r, clicked_r, held_down_r = mouse_r_click_check(previous_status_r)
-        # print('l_click', clicked_l, ' l_held', held_down_l, ' | r_click', clicked_r, ' r_held', held_down_r)
+        print('l_click', clicked_l, ' l_held', held_down_l, ' | r_click', clicked_r, ' r_held', held_down_r)
         mouse_check()
-        # print(wapi.GetCursorPos())
+        print(wapi.GetCursorPos())
         previous_status_l = current_status_l
         previous_status_r = current_status_r
         # time.sleep(0.1)
@@ -84,5 +86,11 @@ def mouse_log_test():
             pass
 
 
+import mouse
+
 if __name__ == "__main__":
-    mouse_log_test()
+    #mouse_log_test()
+    while 1:
+        # print(win32api.GetCursorPos())
+        center = (800, 800)
+        print(mouse.get_position())

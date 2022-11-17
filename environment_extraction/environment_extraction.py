@@ -39,7 +39,7 @@ def start_countdown(countdown_number: int) -> None:
 
 
 AIMLABS_CENTER = (960, 539)  # will probably remove as cursor always locke at center, so we can grab it from win32 api
-SHOOTING_WAIT = 0.4
+SHOOTING_WAIT = 0.1
 SECONDS_TO_RUN = 30
 
 
