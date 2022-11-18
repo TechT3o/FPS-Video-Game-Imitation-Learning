@@ -1,79 +1,79 @@
 from tensorflow import keras
 from keras.applications import EfficientNetB0
 from keras.models import Model
-from keras.layers import Dense, LSTM, Flatten, Conv2D, InputLayer, Input, TimeDistributed, ConvLSTM2D
+from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout
+from typing import Tuple
 
 
 class ModelBuilder:
-    def __init__(self, base='LeNet5', lstm_flag='LSTM'):
-        self.model_base = None
+    model_base: str
+    lstm_flag: str
+    base: str
+    input_shape: Tuple[int, int, int, int]
+    n_mouse_y: int
+    n_mouse_x: int
+    n_clicks: int
+    n_features: int
+    model: keras.layers.Layer
+
+    def __init__(self, image_size: Tuple[int, int], time_steps: int, channel_number: int,
+                 base: str = 'LeNet5', lstm_flag: str = 'LSTM'):
         self.lstm_flag = lstm_flag
         self.base = base
 
-    def efficientnet_base(self):
-        self.model_base = EfficientNetB0(
-            include_top=False,
-            weights=None,
-            input_tensor=None,
-            input_shape=(258, 128, 3),
-            pooling=None,
-            classes=1000,
-            classifier_activation="softmax")
+        self.input_shape = (time_steps, image_size[0], image_size[1], channel_number)
+        self.n_mouse_y = 12
+        self.n_mouse_x = 19
+        self.n_clicks = 2
+        self.n_features = 1
 
-    def lenet5_base(self):
+        self.model = self._build_output_chains()
 
-        input = Input(shape=(252, 121, 3))
-        conv1 = Conv2D(filters=16, kernel_size=(3, 3), strides=2, input_shape=(252, 121, 3), activation='relu', name='conv_1')(input)
-        conv2 = Conv2D(filters=64, kernel_size=(3, 3), strides=2, activation='relu', name='conv_2')(conv1)
-        flattened = Flatten(name= 'flatten')(conv2)
-        chain_1 = TimeDistributed(flattened, activation="relu", name="layer1")
-        lstm = ConvLSTM2D(256, stateful=False, return_sequences=True, dropout=0., recurrent_dropout=0.)(chain_1)
-        chain_2 = Dense(256, activation="relu", name="layer2")(flattened)
-        out_1 = Dense(1, name="out1")(lstm)
-        out_2 = Dense(3, name="out2")(chain_2)
-
-        model = Model(inputs=input, outputs=[out_1, out_2])
-        print(model.summary())
-
-    def lenet5_base_seq(self):
-
-        model = keras.Sequential([
-        Conv2D(filters=16, strides=2, kernel_size=(3, 3), input_shape=(252, 121, 3), activation='relu', name='conv_1'),
-        Conv2D(filters=64,strides=2, kernel_size=(3, 3), activation='relu', name='conv_2'),
-        Flatten(name='flatten'),
-        Dense(256, activation="relu", name="layer1"),
-        Dense(3, name="out2")
-
-        ])
-        model.summary()
-
-    def game_feature_chain(self):
-        self.x = self.model_base.output
-        self.x = Flatten()(self.x)
-        self.x = Dense(256, activation='relu')(self.x)
-        self.x = Dense(1, activation='sigmoid')(self.x)
-
-    def action_scores_chain(self):
-        self.y = self.model_base.output
-        self.y = Flatten()(self.y)
-        self.y = Dense(1024, activation='relu')(self.y)
-
-        if self.lstm_flag == 'LSTM':
-            self.y = LSTM(4)(self.y)
-
-        self.y = Dense(3, activation='sigmoid')(self.y)
-
-    def build_model(self):
+    def _build_base_model(self) -> Model:
+        # TODO put other bases as well
         if self.base == 'EfficientNet':
-            self.efficientnet_base()
-        if self.base == 'LeNet5':
-            self.lenet5_base()
-        self.game_feature_chain()
-        self.action_scores_chain()
-        model = Model(inputs=self.model_base.input, outputs=[self.x, self.y])
-        model.summary()
+            base_model = EfficientNetB0(weights='imagenet', input_shape=(self.input_shape[1:]), include_top=False,
+                                        drop_connect_rate=0.2)
 
-builder = ModelBuilder()
-#builder.build_model()
-builder.lenet5_base()
+            base_model.trainable = True
 
+            intermediate_model = Model(inputs=base_model.input, outputs=base_model.layers[161].output)
+            intermediate_model.trainable = True
+        return intermediate_model
+
+    def _build_output_chains(self) -> Model:
+
+        intermediate_model = self._build_base_model()
+        input_1 = Input(shape=self.input_shape, name='main_in')
+        x = TimeDistributed(intermediate_model)(input_1)
+
+        # x = ConvLSTM2D(filters=512, kernel_size=(3, 3), stateful=False, return_sequences=True,
+        #                dropout=0.5, recurrent_dropout=0.5)(x)
+
+        flat = TimeDistributed(Flatten())(x)
+
+        x = LSTM(256, stateful=False, return_sequences=True, dropout=0., recurrent_dropout=0.)(flat)
+        x = TimeDistributed(Dropout(0.5))(x)
+
+        # 3) add shared fc layers
+        dense_5 = x
+
+        # 4) set up outputs, separate outputs will allow separate losses to be applied
+        flat = Dense(32, activation='relu')(flat)
+        output_1 = Dense(self.n_features, activation='sigmoid')(flat)
+        output_2 = TimeDistributed(Dense(self.n_clicks, activation='sigmoid'))(dense_5)
+        output_3 = TimeDistributed(Dense(self.n_mouse_x, activation='softmax'))(
+            dense_5)  # softmax since mouse is mutually exclusive
+        output_4 = TimeDistributed(Dense(self.n_mouse_y, activation='softmax'))(dense_5)
+        # output_5 = TimeDistributed(Dense(1, activation='linear'))(dense_5)
+        output_all = concatenate([output_2, output_3, output_4], axis=-1)
+        # output_all = concatenate([output_1, output_2, output_3, output_4, output_5], axis=-1)
+
+        # 5) finish model definition
+        model = Model(input_1, [output_1, output_all])
+        print(model.summary())
+        return model
+
+
+if __name__ == "__main__":
+    builder = ModelBuilder((224, 121), 10, 3, base='EfficientNet', lstm_flag='')

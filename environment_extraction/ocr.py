@@ -3,41 +3,33 @@ import pytesseract
 import mss
 import numpy as np
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract'
 
+class OCR:
+    def __init__(self):
+        pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract'
 
-y_l_score = 30
-y_h_score = 90
-x_l_score = 625
-x_h_score = 840
+        # Hard coded values to get score from Aim Labs
+        self.y_l_score = 30
+        self.y_h_score = 90
+        self.x_l_score = 625
+        self.x_h_score = 840
 
-score_history = []
+        self.score_history = []
 
-while 1:
+    def get_score(self, image):
+        score = pytesseract.image_to_string(image)
+        if score != '':
+            try:
+                self.score_history.append(int(score))
+            except Exception as e:
+                print(e)
 
-    with mss.mss() as sct:
-        monitor = {"top": y_l_score, "left": x_l_score, "width": x_h_score-x_l_score, "height": y_h_score-y_l_score}
-        img = np.array(sct.grab(monitor))
-
-    cv2.imshow('image', cv2.resize(img, (800, 600)))
-    k = cv2.waitKey(1) & 0xFF
-
-
-    score = pytesseract.image_to_string(img)
-
-    if score != '':
-        try:
-            score_history.append(int(score))
-        except Exception as e:
-            print(e)
-
-        if len(score_history) > 1 and score_history[-1] > score_history[-2]:
+    def shot_or_missed(self):
+        if len(self.score_history) > 1 and self.score_history[-1] > self.score_history[-2]:
             print('Shot target!')
-        elif len(score_history) > 1 and score_history[-1] < score_history[-2]:
+        elif len(self.score_history) > 1 and self.score_history[-1] < self.score_history[-2]:
             print('Missed target')
 
-    if k == ord('e'):
-        break
-
-print(score_history)
-cv2.destroyAllWindows()
+    @property
+    def score(self):
+        return self.score_history[-1]

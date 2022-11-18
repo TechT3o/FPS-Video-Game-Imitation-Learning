@@ -1,96 +1,92 @@
 # adapted from https://github.com/Sentdex/pygta5/blob/master/getkeys.py
+
 import win32api
-import win32api as wapi
 import time
-import ast
-import win32gui
-import win32evtlog
-
-# this is a list of characters to check when pressing in key_check()
-keyList = ["\b"]
-for char in "TFGHXCMQqpPYUN":
-    keyList.append(char)
-
-def key_check():
-    keys = []
-
-    for key in keyList:
-        # the ord() function returns an integer representing the Unicode character
-        # chr() goes opposite way
-        if wapi.GetAsyncKeyState(ord(key)):
-            keys.append(key)
-    # doesn't work to catch shift...
-    return keys
 
 
-# https://stackoverflow.com/questions/3698635/getting-cursor-position-in-python
-from ctypes import windll, Structure, c_long, byref
+class MouseLogger:
+    previous_status_r: int
+    previous_status_l: int
+    cursor_x: int
+    cursor_y: int
 
-class POINT(Structure):
-    _fields_ = [("x", c_long), ("y", c_long)]
+    def __init__(self):
+        # TODO put action space and discretization somewhere around here?
+        self.action_state_boundaries = None
+        self.cursor_x, self.cursor_y = win32api.GetCursorPos()
+        self.held_down_l = 0
+        self.clicked_l = 0
+        self.held_down_r = 0
+        self.clicked_r = 0
+        self.fps = 20
+        self.previous_status_l = win32api.GetKeyState(0x01)
+        self.previous_status_r = win32api.GetKeyState(0x02)
 
+    def _mouse_l_click_check(self) -> int:
+        self.held_down_l = 0
+        self.clicked_l = 0
+        current_status = win32api.GetKeyState(0x01)
+        if current_status < 0:
+            self.held_down_l = 1  # held down click
+            if current_status != self.previous_status_l and not self.previous_status_l < 0:
+                self.clicked_l = 1  # just tapped this
+        return current_status
 
-def mouse_check():
-    pt = POINT()
-    windll.user32.GetCursorPos(byref(pt))
-    # print(win32gui.SetCapture(win32gui.GetFocus()))
-    # flags, hcursor, (x, y) = win32gui.GetCursorInfo()
-    # print(x,y)
-    return pt.x, pt.y
+    def _mouse_r_click_check(self) -> int:
+        self.held_down_r = 0
+        self.clicked_r = 0
+        current_status = win32api.GetKeyState(0x02)
 
+        if current_status < 0:
+            self.held_down_r = 1  # held down click
+            if current_status != self.previous_status_r and not self.previous_status_r < 0:
+                self.clicked_r = 1  # just tapped this
+        return current_status
 
-def mouse_l_click_check(previous_status):
-    held_down = 0
-    clicked = 0
-    current_status = wapi.GetKeyState(0x01)
-    if current_status < 0:
-        held_down = 1  # held down click
-        if current_status != previous_status and not previous_status < 0:
-            clicked = 1  # just tapped this
+    def mouse_log_test(self) -> None:
+        # TODO: figure how to get values outside of while loop. Should it be read inside main or run at different Thread
+        while True:
+            loop_start_time = time.time()  # this is in seconds
 
-    return current_status, clicked, held_down
+            current_status_l = self._mouse_l_click_check()
+            current_status_r = self._mouse_r_click_check()
+            print('l_click', self.clicked_l, ' l_held', self.held_down_l, ' | r_click', self.clicked_r,
+                  ' r_held', self.held_down_r)
+            self.cursor_x, self.cursor_y = win32api.GetCursorPos()
+            self.previous_status_l = current_status_l
+            self.previous_status_r = current_status_r
+            # time.sleep(0.1)
 
+            # wait until end of time step
+            while time.time() < loop_start_time + 1/self.fps:
+                pass
 
-def mouse_r_click_check(previous_status):
-    held_down = 0
-    clicked = 0
-    current_status = wapi.GetKeyState(0x02)
+    @property
+    def x_coord(self):
+        return self.cursor_x
 
-    if current_status < 0:
-        held_down = 1  # held down click
-        if current_status != previous_status and not previous_status < 0:
-            clicked = 1  # just tapped this
+    @property
+    def y_coord(self):
+        return self.cursor_y
 
-    return current_status, clicked, held_down
+    @property
+    def l_click(self):
+        return self.clicked_l
 
+    @property
+    def r_click(self):
+        return self.clicked_r
 
-def mouse_log_test():
-    loop_fps = 20
-    previous_status_l = wapi.GetKeyState(0x01)
-    previous_status_r = wapi.GetKeyState(0x02)
+    @property
+    def l_held(self):
+        return self.held_down_l
 
-    while True:
-        loop_start_time = time.time() # this is in seconds
+    @property
+    def r_held(self):
+        return self.held_down_r
 
-        current_status_l, clicked_l, held_down_l = mouse_l_click_check(previous_status_l)
-        current_status_r, clicked_r, held_down_r = mouse_r_click_check(previous_status_r)
-        print('l_click', clicked_l, ' l_held', held_down_l, ' | r_click', clicked_r, ' r_held', held_down_r)
-        mouse_check()
-        print(wapi.GetCursorPos())
-        previous_status_l = current_status_l
-        previous_status_r = current_status_r
-        # time.sleep(0.1)
-
-        # wait until end of time step
-        while time.time() < loop_start_time + 1/loop_fps:
-            pass
-
-
-import mouse
 
 if __name__ == "__main__":
-    #mouse_log_test()
-    while 1:
-        # print(win32api.GetCursorPos())
-        center = (800, 800)
-        print(mouse.get_position())
+    logger = MouseLogger()
+    logger.mouse_log_test()
+    print(f'cursor x coord {logger.x_coord} and y coord {logger.y_coord}')
