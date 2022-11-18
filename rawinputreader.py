@@ -163,16 +163,9 @@ def listen(queue):
 
         if wParam == WM_MOUSEMOVE:
             event = MoveEvent(struct.x, struct.y, t)
-            if event.x < 0:
-                event.x = 0
-            elif event.x > 1920:
-                event.x = 1920
-            if event.y < 0:
-                event.y = 0
-            elif event.y > 1080:
-                event.y = 1080
-            print(int(event.x), int(event.y)
-                  )
+            mouse_x = 0 if event.x < 0 else 1920 if event.x > 1920 else event.x
+            mouse_y = 0 if event.y < 0 else 1080 if event.y > 1080 else event.y
+            print(mouse_x, mouse_y)
         elif wParam == WM_MOUSEWHEEL:
             event = WheelEvent(struct.data / (WHEEL_DELTA * (2<<15)), t)
         elif wParam in buttons_by_wm_code:
