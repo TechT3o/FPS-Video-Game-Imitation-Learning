@@ -1,4 +1,4 @@
-from ocr import OCR
+from environment_extracting.ocr import OCR
 import mss
 import numpy as np
 import cv2

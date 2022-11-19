@@ -35,6 +35,7 @@ class DataProcessor:
         self.val_fraction = validation_fraction
         self.test_fraction = test_fraction
         self.normalize = False if normalize is None else normalize
+        #TODO put Nathans action space discretization to be used when loading the dataset
 
     def load_dataset(self) -> np.ndarray:
         dataset = np.array([])
