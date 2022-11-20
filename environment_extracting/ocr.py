@@ -16,7 +16,7 @@ class OCR:
 
         self.score_history = []
 
-    def get_score(self, image):
+    def get_score(self, image) -> None:
         score = pytesseract.image_to_string(image)
         if score != '':
             try:
@@ -24,7 +24,7 @@ class OCR:
             except Exception as e:
                 print(e)
 
-    def shot_or_missed(self):
+    def shot_or_missed(self) -> None:
         if len(self.score_history) > 1 and self.score_history[-1] > self.score_history[-2]:
             print('Shot target!')
         elif len(self.score_history) > 1 and self.score_history[-1] < self.score_history[-2]:

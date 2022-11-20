@@ -6,6 +6,9 @@ from typing import Tuple
 
 
 class MouseLogger:
+    """
+    Class that logs the mouse inputs
+    """
     previous_status_r: int
     previous_status_l: int
     cursor_x: int
@@ -18,6 +21,11 @@ class MouseLogger:
     game_resets_cursor: bool
 
     def __init__(self, window_coordinates: Tuple[int, int] = (1920/2, 1080/2), reset_cursor_flag: bool = True):
+        """
+        class constructor
+        :param window_coordinates: coordinates of the screen
+        :param reset_cursor_flag: whether the game trying to log resets the cursor to the center value after every frame
+        """
         self.action_state_boundaries = None
         self.cursor_x, self.cursor_y = win32api.GetCursorPos()
         self.held_down_l = 0
@@ -34,6 +42,10 @@ class MouseLogger:
         self.game_resets_cursor = reset_cursor_flag
 
     def _mouse_l_click_check(self) -> int:
+        """
+        Checks if the left side of the mouse was clicked or is being held down
+        :return: current mouse status
+        """
         self.held_down_l = 0
         self.clicked_l = 0
         current_status = win32api.GetKeyState(0x01)
@@ -44,6 +56,10 @@ class MouseLogger:
         return current_status
 
     def _mouse_r_click_check(self) -> int:
+        """
+        Checks if the right side of the mouse was clicked or is being held down
+        :return: current mouse status
+        """
         self.held_down_r = 0
         self.clicked_r = 0
         current_status = win32api.GetKeyState(0x02)
@@ -54,7 +70,11 @@ class MouseLogger:
                 self.clicked_r = 1  # just tapped this
         return current_status
 
-    def cursor_reset(self):
+    def cursor_reset(self) -> None:
+        """
+        Checks if cursor was reset and tries to ignore this motion
+        :return: None
+        """
         # Does not work as intended because cursor reading stays at constant at edges of screen
         # if not (0 < self.cursor_x < 1919):
         #     self.cursor_x = self.previous_cursor_x
@@ -70,7 +90,11 @@ class MouseLogger:
             self.previous_cursor_x = self.cursor_x
             self.previous_cursor_y = self.cursor_y
 
-    def get_mouse_states(self):
+    def get_mouse_states(self) -> None:
+        """
+        Gets the state of the mouse cursor, its final motion and the status of the left and right clicks
+        :return: None
+        """
 
         current_status_l = self._mouse_l_click_check()
         current_status_r = self._mouse_r_click_check()
@@ -95,6 +119,10 @@ class MouseLogger:
             self.previous_cursor_y = self.cursor_y
 
     def mouse_log_test(self) -> None:
+        """
+        Used to test the mouse behaviour
+        :return: None
+        """
         while True:
             loop_start_time = time.time()
             self.get_mouse_states()

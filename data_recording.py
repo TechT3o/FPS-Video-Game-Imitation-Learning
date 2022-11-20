@@ -7,13 +7,24 @@ WINDOW_COORDINATES = (0, 0, 1920, 1080)
 
 
 class DataRecorder:
+    """
+    Class that records the user input and the image frames and saves that information in csv files
+    """
     def __init__(self, save_path):
+        """
+        class constructor
+        :param save_path: path where the data should be saved
+        """
         self.mouse_logger = MouseLogger(window_coordinates=(1302, 588), reset_cursor_flag=True)
         self.environment = EnvironmentExtractor(WINDOW_COORDINATES)
         self.data_writer = None  #TODO put spencers' datawriter
         self.fps = 32
 
-    def run(self):
+    def run(self) -> None:
+        """
+        main function that runs to record hte data
+        :return: None
+        """
         while True:
             loop_start_time = time.time()
 

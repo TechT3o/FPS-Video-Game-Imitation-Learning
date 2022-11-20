@@ -17,6 +17,12 @@ class ModelTrainer:
     __history: dict
 
     def __init__(self, save_path: str, model_base: str = 'EfficientNet', augmentation: bool = None):
+        """
+        class constructor
+        :param save_path: path to save the model built
+        :param model_base: flag for which model base to use
+        :param augmentation: flag to augment input data or not
+        """
         self.model_builder = ModelBuilder(image_size=(252, 121), time_steps=10, channel_number=3,
                                           base=model_base, lstm_flag='')
         self.dataset = DataProcessor(data_path='', color_channels=1, image_size=(252, 121), normalize=True,
@@ -30,6 +36,10 @@ class ModelTrainer:
         self._train_and_evaluate_model()
 
     def image_generator(self) -> tf.keras.preprocessing.image.ImageDataGenerator:
+        """
+        Keras generator that takes the datasetX augments it and the inputs it in the model training
+        :return: keras image data generator object
+        """
         return tf.keras.preprocessing.image.ImageDataGenerator(
             featurewise_center=False,
             samplewise_center=False,
@@ -57,6 +67,10 @@ class ModelTrainer:
         )
 
     def _train_model(self) -> None:
+        """
+        Trains the model for specific callbacks and saves the training history and the best model
+        :return: None
+        """
         x_train = self.dataset.x_train
         x_val = self.dataset.x_val
         if self.dataset.x_train.max() > 1:
@@ -95,9 +109,18 @@ class ModelTrainer:
             self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
 
     def _predict(self, images: np.ndarray) -> np.ndarray:
+        """
+        Uses the model to make a prediction for the input image
+        :param images: input image to test
+        :return: prediction in an array
+        """
         return self.__model.predict(images)
 
     def _evaluate(self) -> None:
+        """
+        Tests the trained model on the test dataset and retrieves models metrics
+        :return: None
+        """
         x_test = self.dataset.x_test
         y_test = self.dataset.y_test
         predictions = self._predict(x_test)
@@ -111,6 +134,10 @@ class ModelTrainer:
         self.__metrics["accuracy"] = accuracy_score(y_test, predictions)
 
     def _train_and_evaluate_model(self) -> None:
+        """
+        Trains and evaluates the model
+        :return: None
+        """
         self._train_model()
         self._evaluate()
 

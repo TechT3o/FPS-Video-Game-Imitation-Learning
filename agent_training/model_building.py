@@ -6,6 +6,9 @@ from typing import Tuple
 
 
 class ModelBuilder:
+    """
+    class that builds a model and evaluates it based on given flags
+    """
     model_base: str
     lstm_flag: str
     base: str
@@ -18,6 +21,14 @@ class ModelBuilder:
 
     def __init__(self, image_size: Tuple[int, int], time_steps: int, channel_number: int,
                  base: str = 'LeNet5', lstm_flag: str = 'LSTM'):
+        """
+        class constructor
+        :param image_size: size of input images
+        :param time_steps: length of image sequences given for training the model
+        :param channel_number: size of channels that the input image has
+        :param base: flag for which base to use available ones are 'EfficientNet' and 'LeNet5'
+        :param lstm_flag: flag for model output to include an 'LSTM' layer
+        """
         self.lstm_flag = lstm_flag
         self.base = base
 
@@ -30,6 +41,10 @@ class ModelBuilder:
         self.model = self._build_output_chains()
 
     def _build_base_model(self) -> Model:
+        """
+        Builds the CNN base model
+        :return: keras model object
+        """
         # TODO put other bases as well
         if self.base == 'EfficientNet':
             base_model = EfficientNetB0(weights='imagenet', input_shape=(self.input_shape[1:]), include_top=False,
@@ -42,7 +57,10 @@ class ModelBuilder:
         return intermediate_model
 
     def _build_output_chains(self) -> Model:
-
+        """
+        Builds the fully connected or recurrent output chains of the model
+        :return: keras model object
+        """
         intermediate_model = self._build_base_model()
         input_1 = Input(shape=self.input_shape, name='main_in')
         x = TimeDistributed(intermediate_model)(input_1)

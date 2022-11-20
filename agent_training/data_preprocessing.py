@@ -6,6 +6,10 @@ import os
 
 
 class DataProcessor:
+    """
+    Class that reads the stored data, preprocesses them and splits them into training test and validation for the
+    model trainer to use.
+    """
     data_path: str
     save_path: str
     batch_size: int
@@ -42,12 +46,21 @@ class DataProcessor:
         return dataset
 
     def get_image(self, img_path) -> np.ndarray:
-        img = tf.keras.preprocessing.image.load_img(img_path, color_mode="rgb", target_size=self.image_size,
-                                                    interpolation="lanczos")
-        img = tf.keras.preprocessing.image.img_to_array(img, data_format=None)
-        return img
+        """
+        Loads image to an array using keras
+        :param img_path: string path to the image to be loaded
+        :return: array of image
+        """
+        image = tf.keras.preprocessing.image.load_img(img_path, color_mode="rgb", target_size=self.image_size,
+                                                      interpolation="lanczos")
+        image = tf.keras.preprocessing.image.img_to_array(image, data_format=None)
+        return image
 
     def reshape_dataset(self) -> None:
+        """
+        Reshape the dataset to be loaded in an R-CNN
+        :return: None
+        """
         if self.time_steps != 0 and len(self.__y.shape) == 1:
             self.__X = self.__X.reshape((-1, self.time_steps, self.image_size[0],
                                         self.image_size[1], self.color_channels))
@@ -60,6 +73,10 @@ class DataProcessor:
             self.__y = self.__y = np.mean(self.__y, axis=1)
 
     def train_test_val_split(self) -> None:
+        """
+        Splits data in train, test and validation
+        :return: None
+        """
         test_fraction = self.test_fraction / (1 - self.val_fraction)
 
         self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(self.__X, self.__y,

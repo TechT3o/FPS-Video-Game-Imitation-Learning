@@ -1,11 +1,22 @@
 from environment_extracting.ocr import OCR
+from typing import Tuple, List
 import mss
 import numpy as np
 import cv2
 
 
 class EnvironmentExtractor:
+    """
+    Class that extracts visual information from the environment
+    """
+    ocr: OCR
+    screen_coordinates: Tuple[int, int, int, int]
+    frame: np.ndarray
+    target_mask: np.ndarray
+    target_centers: List
+
     def __init__(self, window_capture_coordinates):
+        """"""
         self.ocr = OCR()
         self.screen_coordinates = window_capture_coordinates
         self.frame = self.get_image()
@@ -13,18 +24,30 @@ class EnvironmentExtractor:
         self.target_centers = []
 
     def get_image(self) -> np.ndarray:
+        """
+        Gets screenshot for the given window coordinates
+        :return: array of the captured image
+        """
         with mss.mss() as sct:
             monitor = {"top": self.screen_coordinates[0], "left": self.screen_coordinates[1],
                        "width": self.screen_coordinates[2], "height": self.screen_coordinates[3]}
             return np.array(sct.grab(monitor))
 
     def get_ocr_image(self) -> np.ndarray:
+        """
+        Gets screenshot for the coordinates given by OCR
+        :return: array of the captured image
+        """
         with mss.mss() as sct:
             monitor = {"top": self.ocr.y_l_score, "left": self.ocr.x_l_score,
                        "width": self.ocr.x_h_score-self.ocr.x_l_score, "height": self.ocr.y_h_score-self.ocr.y_l_score}
             return np.array(sct.grab(monitor))
 
     def color_filtering(self) -> None:
+        """
+        Filters the image based on the color and produces a mask
+        :return: None
+        """
         # hard coded hsv values that give the blue color of Aimlabs circles. Found using color_selection_tool.py
         hsv = cv2.cvtColor(self.frame.copy(), cv2.COLOR_BGR2HSV)
         lower_color = np.array([82, 130, 10])
@@ -36,6 +59,10 @@ class EnvironmentExtractor:
         self.target_mask = cv2.dilate(mask, (5, 5))
 
     def find_targets(self) -> None:
+        """
+        Finds centers of contours of the mask which has the color filtered objects
+        :return: None
+        """
         contours, hierarchy = cv2.findContours(self.target_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours:
             moment = cv2.moments(contour)
