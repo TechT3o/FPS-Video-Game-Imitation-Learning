@@ -20,7 +20,7 @@ class DataRecorder:
         ltime = time.localtime(time.time())
         self.csvfile = open(f"{save_path}\data_{ltime.tm_year}_{ltime.tm_mon}_{ltime.tm_mday}_{ltime.tm_hour}_{ltime.tm_min}_{ltime.tm_sec}.csv", 'w', newline='') #TODO: close file after loop if not exited via Ctrl+C
         self.data_writer = csv.writer(self.csvfile)
-        self.data_writer.writerow(["Image Path", "Start X", "Start Y", "End X", "End Y"])
+        self.data_writer.writerow(["Image Path", "Start X", "Start Y", "End X", "End Y", "Shot"])
         self.fps = 30
 
     def run(self) -> None:
@@ -33,12 +33,10 @@ class DataRecorder:
         while True:
             loop_start_time = time.time()
             self.mouse_logger.get_mouse_states()
-            print(self.mouse_logger.d_x, self.mouse_logger.d_y)
-            if self.mouse_logger.l_click:
-                self.data_writer.writerow([self.environment.get_image(), prev_x, prev_y, self.mouse_logger.d_x, self.mouse_logger.d_y])
-                prev_x = self.mouse_logger.d_x
-                prev_y = self.mouse_logger.d_y
-                print('shot')
+            #print(self.mouse_logger.d_x, self.mouse_logger.d_y)
+            self.data_writer.writerow([self.environment.get_image(), prev_x, prev_y, self.mouse_logger.d_x, self.mouse_logger.d_y, self.mouse_logger.l_click])
+            prev_x = self.mouse_logger.d_x
+            prev_y = self.mouse_logger.d_y
             while time.time() < loop_start_time + 1/self.fps:
                 pass
 
