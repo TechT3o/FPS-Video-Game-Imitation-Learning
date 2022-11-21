@@ -18,7 +18,7 @@ class DataRecorder:
         self.mouse_logger = MouseLogger(window_coordinates=(1302, 588), reset_cursor_flag=True)
         self.environment = EnvironmentExtractor(WINDOW_COORDINATES)
         ltime = time.localtime(time.time())
-        self.csvfile = open(f"{save_path}\data_{ltime.tm_year}_{ltime.tm_mon}_{ltime.tm_mday}_{ltime.tm_hour}_{ltime.tm_min}_{ltime.tm_sec}.csv", 'w') #TODO: close file after loop if not exited via Ctrl+C
+        self.csvfile = open(f"{save_path}\data_{ltime.tm_year}_{ltime.tm_mon}_{ltime.tm_mday}_{ltime.tm_hour}_{ltime.tm_min}_{ltime.tm_sec}.csv", 'w', newline='') #TODO: close file after loop if not exited via Ctrl+C
         self.data_writer = csv.writer(self.csvfile)
         self.data_writer.writerow(["Image Path", "Start X", "Start Y", "End X", "End Y"])
         self.fps = 30
