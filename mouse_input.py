@@ -38,8 +38,8 @@ class MouseLogger:
         self.previous_status_l = win32api.GetKeyState(0x01)
         self.previous_status_r = win32api.GetKeyState(0x02)
         self.window_coordinates = window_coordinates
-        self.screen_center = (int(window_coordinates[2]-window_coordinates[0]/2),
-                              int(window_coordinates[3]-window_coordinates[1]/2))
+        self.screen_center = (int((window_coordinates[2]-window_coordinates[0])/2),
+                              int((window_coordinates[3]-window_coordinates[1])/2))
         self.previous_cursor_x, self.previous_cursor_y = win32api.GetCursorPos()
         self.delta_x = self.cursor_x - self.previous_cursor_x
         self.delta_y = self.cursor_y - self.previous_cursor_y
@@ -97,10 +97,10 @@ class MouseLogger:
             self.previous_cursor_x = self.cursor_x
             self.previous_cursor_y = self.cursor_y
 
-    def hit_edge(self):
+    def hit_edge(self) -> bool:
         """
         Checks to see if the cursor has hit the edge of the screen
-        :return:
+        :return: True if it has hit windows' edge, False if it has not
         """
         # TODO 6 is a hardcoded value so please check this in your monitors as well
         if not (self.window_coordinates[0]+6 < self.cursor_x < self.window_coordinates[2]-6):

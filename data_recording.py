@@ -4,7 +4,7 @@ from environment_extracting.environment_extraction import EnvironmentExtractor
 import time
 import csv
 from cv2 import imwrite
-from statics import check_and_create_directory
+from statics import check_and_create_directory, start_countdown, mouse_click_at
 from win32api import GetSystemMetrics
 from typing import Tuple
 
