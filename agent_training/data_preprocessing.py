@@ -1,7 +1,9 @@
 from sklearn.model_selection import train_test_split
+from data_normalizer import DataNormalizer
 import tensorflow as tf
 from typing import Tuple
 import numpy as np
+import keyboard
 import os
 
 
@@ -28,22 +30,24 @@ class DataProcessor:
     __X_test: np.ndarray
     __y_test: np.ndarray
 
-    def __init__(self, data_path: str, image_size: Tuple[int, int], color_channels: int, normalize: bool,
-                 validation_fraction: float, test_fraction: float, time_steps=None):
+    def __init__(self, image_size: Tuple[int, int], color_channels: int, data_path: str = '', normalize: bool = False,
+                 validation_fraction: float = 0.2, test_fraction: float = 0.2, time_steps=None):
 
         self.color_channels = color_channels
         self.__label_indices = dict()
-        self.data_path = data_path if len(data_path) != 0 else os.getcwd()
         self.image_size = image_size
         self.time_steps = 0 if time_steps is None else time_steps
         self.val_fraction = validation_fraction
         self.test_fraction = test_fraction
         self.normalize = False if normalize is None else normalize
-        #TODO put Nathans action space discretization to be used when loading the dataset
+        self.data_normalizer = DataNormalizer(data_path)
+        self.load_dataset()
 
-    def load_dataset(self) -> np.ndarray:
-        dataset = np.array([])
-        return dataset
+
+    def load_dataset(self) -> None:
+        self.image_paths = self.data_normalizer.image_paths
+        x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+        print(self.image_paths)
 
     def get_image(self, img_path) -> np.ndarray:
         """
@@ -114,3 +118,6 @@ class DataProcessor:
     @property
     def y_test(self):
         return self.__y_test
+
+if __name__ == "__main__":
+    dp = DataProcessor((25, 25), 3, data_path='C:\\Users\\thpap\\PycharmProjects\\Video-games-target-generalization')

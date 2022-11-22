@@ -1,65 +1,62 @@
-import csv
+import os
 import numpy as np
 import pandas as pd
-from statics import discretize
 
 
 class DataNormalizer:
-    def __init__(self, data_path: str):
-        self.data_dataframe = pd.read_csv(data_path)
-        self.image_paths = self.data_dataframe['image_paths']
-        self.x_values = self.data_dataframe['delta_x']
-        self.y_values = self.data_dataframe['delta_y']
+    def __init__(self, data_path: str = ''):
+        if data_path == '':
+            self.csv_path = os.path.join(os.getcwd(), 'data\\csvs')
+        else:
+            self.csv_path = os.path.join(data_path, 'data\\csvs')
 
-        self.discrete_x = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
-        self.discrete_y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
+        self.action_space_x = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
+        self.action_space_y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
 
-    def discretize_xy_values(self):
-        self.x_values = discretize(self.x_values, self.discrete_x)
-        self.y_values = discretize(self.y_values, self.discrete_y)
+        self.discretize_x_function = np.vectorize(lambda x: self.action_space_x[(np.abs(self.action_space_x - x)).argmin()])
+        self.discretize_y_function = np.vectorize(lambda y: self.action_space_y[(np.abs(self.action_space_y - y)).argmin()])
+        self.data_dataframe = pd.DataFrame()
+        self.load_csvs()
+        # print(self.data_dataframe)
+        self.keep_non_edge_data()
+        self.data_dataframe['Delta X'] = self.discretize_x_function(self.data_dataframe['Delta X'].values)
+        self.data_dataframe['Delta Y'] = self.discretize_y_function(self.data_dataframe['Delta Y'].values)
+        self.one_hot_encoding()
+
+    def one_hot_encoding(self):
+        one_hot_dataframe_x = pd.get_dummies(self.data_dataframe['Delta X']).to_numpy()
+        one_hot_dataframe_y = pd.get_dummies(self.data_dataframe['Delta Y']).to_numpy()
+        one_hot_dataframe_click = pd.get_dummies(self.data_dataframe['Shot']).to_numpy()
+
+        return one_hot_dataframe_x, one_hot_dataframe_y, one_hot_dataframe_click
+
+    def load_csvs(self):
+        for csv_file in os.listdir(self.csv_path):
+            sample_dataframe = pd.read_csv(os.path.join(self.csv_path, csv_file))
+            self.data_dataframe = pd.concat([self.data_dataframe, sample_dataframe], axis=0, ignore_index=True)
+            #print(self.data_dataframe)
+
+    def keep_non_edge_data(self):
+        self.data_dataframe = self.data_dataframe[self.data_dataframe['Hit Edge Flag'] == False]
 
     @property
-    def discrete_x(self):
-        return self.x_values
+    def discretized_x(self):
+        return self.discretize_x_function(self.data_dataframe['Delta X'].values)
 
     @property
-    def discrete_y(self):
-        return self.y_values
+    def discretized_y(self):
+        return self.discretize_y_function(self.data_dataframe['Delta Y'].values)
 
-# Saving the X and Y Values in an Array
-x_values = []
-y_values = []
+    @property
+    def image_paths(self):
+        return self.data_dataframe['Image Path'].values
 
-# Opening the File
-with open('data.csv', 'r') as file:
-    filecontent = csv.reader(file)
-
-    for line in filecontent:
-        x_values.append(line[0])
-        y_values.append(line[1])
+    @property
+    def click_values(self):
+        return self.data_dataframe['Shot'].values
 
 
-def closest1(discrete_x, i):
-    discrete_x = np.asarray(discrete_x)
-    idx = (np.abs(discrete_x - i)).argmin()
-    return discrete_x[idx]
-
-
-def closest2(discrete_y, j):
-    discrete_y = np.asarray(discrete_y)
-    idy = (np.abs(discrete_y - j)).argmin()
-    return discrete_y[idy]
-
-
-discrete_x = [-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300]
-discrete_y = [-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100]
-
-# Append the values to normalize each one
-
-for i in x_values:
-    print(closest1(discrete_x, int(i)))
-
-for j in y_values:
-    print(closest2(discrete_y, int(j)))
-
+if __name__ == "__main__":
+    normalizer = DataNormalizer('')
+# print(normalizer.discretized_x, normalizer.discretized_y)
             

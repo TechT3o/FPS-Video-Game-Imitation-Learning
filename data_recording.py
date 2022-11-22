@@ -4,8 +4,8 @@ from environment_extracting.environment_extraction import EnvironmentExtractor
 import time
 import csv
 from cv2 import imwrite
-from statics import check_and_create_directory, start_countdown, mouse_click_at
-from win32api import GetSystemMetrics
+from statics import check_and_create_directory, start_countdown
+import win32api
 from typing import Tuple
 
 
@@ -20,7 +20,7 @@ class DataRecorder:
         """
         self.mouse_logger = MouseLogger(window_coordinates=window_coordinates, reset_cursor_flag= reset_cursor_flag)
         self.environment = EnvironmentExtractor(WINDOW_COORDINATES)
-        self.fps = 15
+        self.fps = 30
 
         if save_path == '':
             self.data_path = os.path.join(os.getcwd(), 'data')
@@ -51,6 +51,7 @@ class DataRecorder:
         check_and_create_directory(current_frames_path)
 
         with open(file_path, 'w', newline='') as csv_file:
+            start_countdown(5)
             data_writer = csv.writer(csv_file)
             # data_writer.writerow(["Image Path", "Start X", "Start Y", "End X", "End Y", "Shot", "Hit Edge Flag"])
             data_writer.writerow(["Image Path", "Delta X", "Delta Y", "Shot", "Hit Edge Flag"])
@@ -58,14 +59,14 @@ class DataRecorder:
             while True:
                 loop_start_time = time.time()
                 self.mouse_logger.get_mouse_states()
-                #  print(self.mouse_logger.d_x, self.mouse_logger.d_y)
+                # print(self.mouse_logger.d_x, self.mouse_logger.d_y)
                 image_save_path = os.path.join(current_frames_path, f'Frame_{timestamp}_{frame_index}.jpg')
                 imwrite(image_save_path, self.environment.get_image())
                 # data_writer.writerow([os.path.join(os.path.join('data', 'frames'),
                 #                                    f'Frame_{timestamp}_{frame_index}.jpg'),
                 #                       self.mouse_logger.previous_cursor_x, self.mouse_logger.previous_cursor_y,
                 #                       self.mouse_logger.cursor_x, self.mouse_logger.cursor_y, self.mouse_logger.l_click,
-                #                       self.mouse_logger.hit_edge()])
+                #                       self.mouse_logger.hit_edge()])H
                 data_writer.writerow([os.path.join(os.path.join('data', 'frames'),
                                                    f'Frame_{timestamp}_{frame_index}.jpg'), self.mouse_logger.d_x,
                                       self.mouse_logger.d_y, self.mouse_logger.l_click, self.mouse_logger.hit_edge()])
@@ -73,12 +74,24 @@ class DataRecorder:
                 while time.time() < loop_start_time + 1/self.fps:
                     pass
 
+                # right now it pauses if you click p and unpauses if you double click p
+                #TODO fix the data recorder controls
+                if win32api.GetAsyncKeyState(ord('P')):
+                    print('Paused')
+                    time.sleep(0.5)
+                    while not win32api.GetAsyncKeyState(ord('P')):
+                        print('still paused')
+
+                if win32api.GetAsyncKeyState(ord('Q')):
+                    print('Quit')
+                    break
+
 
 WINDOW_COORDINATES = (0, 0, 1920, 1080)
 RESET_CURSOR_FLAG = False
 SAVE_PATH = ''
 # WINDOW_COORDINATES = (0, 0, GetSystemMetrics(0), GetSystemMetrics(1))
-print(GetSystemMetrics(0), GetSystemMetrics(1))
+# print(win32api.GetSystemMetrics(0), win32api.GetSystemMetrics(1))
 
 if __name__ == "__main__":
     data_recorder = DataRecorder(save_path=SAVE_PATH, window_coordinates=WINDOW_COORDINATES,

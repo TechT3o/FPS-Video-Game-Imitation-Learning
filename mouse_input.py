@@ -81,11 +81,9 @@ class MouseLogger:
         """
         # Does not work as intended because cursor reading stays at constant at edges of screen
         if not (0 < self.cursor_x < 1919):
-            print('Hit edge')
-            # self.cursor_x = self.previous_cursor_x
+            self.cursor_x = self.previous_cursor_x
         if not (0 < self.cursor_y < 1079):
             self.cursor_y = self.previous_cursor_y
-            print('Hit edge')
 
         # effort to fix reset motion delta x detected after every movement but found that for these games
         # it is better to just keep previous cursor as the center of the screen
@@ -104,12 +102,12 @@ class MouseLogger:
         """
         # TODO 6 is a hardcoded value so please check this in your monitors as well
         if not (self.window_coordinates[0]+6 < self.cursor_x < self.window_coordinates[2]-6):
-            print('Hit edge')
+            # print('Hit edge')
             return True
             # self.cursor_x = self.previous_cursor_x
         if not (self.window_coordinates[1]+6 < self.cursor_y < self.window_coordinates[3]-6):
             self.cursor_y = self.previous_cursor_y
-            print('Hit edge')
+            # print('Hit edge')
             return True
         return False
 
@@ -128,7 +126,7 @@ class MouseLogger:
 
         # print('l_click', self.clicked_l, ' l_held', self.held_down_l, ' | r_click', self.clicked_r,
         #       ' r_held', self.held_down_r)
-        print(f'cursor x coord {self.cursor_x} and y coord {self.cursor_y}')
+        # print(f'cursor x coord {self.cursor_x} and y coord {self.cursor_y}')
         # print(f'delta_x is {self.delta_x} and delta_y is {self.delta_y}')
         self.previous_status_l = current_status_l
         self.previous_status_r = current_status_r
