@@ -1,5 +1,5 @@
 # adapted from https://github.com/Sentdex/pygta5/blob/master/getkeys.py
-
+from win32api import GetSystemMetrics
 import win32api
 import time
 from typing import Tuple
@@ -18,9 +18,11 @@ class MouseLogger:
     delta_x: int
     delta_y: int
     screen_center: Tuple[int, int]
+    window_coordinates: Tuple[int, int, int, int]
     game_resets_cursor: bool
 
-    def __init__(self, window_coordinates: Tuple[int, int] = (1920/2, 1080/2), reset_cursor_flag: bool = True):
+    def __init__(self, window_coordinates: Tuple[int, int, int, int] = (GetSystemMetrics(0)/2, GetSystemMetrics(1)/2),
+                 reset_cursor_flag: bool = True):
         """
         class constructor
         :param window_coordinates: coordinates of the screen
@@ -35,7 +37,9 @@ class MouseLogger:
         self.fps = 20
         self.previous_status_l = win32api.GetKeyState(0x01)
         self.previous_status_r = win32api.GetKeyState(0x02)
-        self.screen_center = window_coordinates
+        self.window_coordinates = window_coordinates
+        self.screen_center = (int(window_coordinates[2]-window_coordinates[0]/2),
+                              int(window_coordinates[3]-window_coordinates[1]/2))
         self.previous_cursor_x, self.previous_cursor_y = win32api.GetCursorPos()
         self.delta_x = self.cursor_x - self.previous_cursor_x
         self.delta_y = self.cursor_y - self.previous_cursor_y
@@ -76,19 +80,38 @@ class MouseLogger:
         :return: None
         """
         # Does not work as intended because cursor reading stays at constant at edges of screen
-        # if not (0 < self.cursor_x < 1919):
-        #     self.cursor_x = self.previous_cursor_x
-        # if not (0 < self.cursor_y < 1079):
-        #     self.cursor_y = self.previous_cursor_y
+        if not (0 < self.cursor_x < 1919):
+            print('Hit edge')
+            # self.cursor_x = self.previous_cursor_x
+        if not (0 < self.cursor_y < 1079):
+            self.cursor_y = self.previous_cursor_y
+            print('Hit edge')
 
         # effort to fix reset motion delta x detected after every movement but found that for these games
         # it is better to just keep previous cursor as the center of the screen
+
         if (self.cursor_x == self.screen_center[0] and self.cursor_y == self.screen_center[1]) and \
                 ((abs(self.cursor_x - self.previous_cursor_x) > 0) or
                  (abs(self.cursor_y - self. previous_cursor_y > 0))):
             print('reset cursor')
             self.previous_cursor_x = self.cursor_x
             self.previous_cursor_y = self.cursor_y
+
+    def hit_edge(self):
+        """
+        Checks to see if the cursor has hit the edge of the screen
+        :return:
+        """
+        # TODO 6 is a hardcoded value so please check this in your monitors as well
+        if not (self.window_coordinates[0]+6 < self.cursor_x < self.window_coordinates[2]-6):
+            print('Hit edge')
+            return True
+            # self.cursor_x = self.previous_cursor_x
+        if not (self.window_coordinates[1]+6 < self.cursor_y < self.window_coordinates[3]-6):
+            self.cursor_y = self.previous_cursor_y
+            print('Hit edge')
+            return True
+        return False
 
     def get_mouse_states(self) -> None:
         """
@@ -105,7 +128,7 @@ class MouseLogger:
 
         # print('l_click', self.clicked_l, ' l_held', self.held_down_l, ' | r_click', self.clicked_r,
         #       ' r_held', self.held_down_r)
-        # print(f'cursor x coord {self.cursor_x} and y coord {self.cursor_y}')
+        print(f'cursor x coord {self.cursor_x} and y coord {self.cursor_y}')
         # print(f'delta_x is {self.delta_x} and delta_y is {self.delta_y}')
         self.previous_status_l = current_status_l
         self.previous_status_r = current_status_r
@@ -126,6 +149,8 @@ class MouseLogger:
         while True:
             loop_start_time = time.time()
             self.get_mouse_states()
+            self.hit_edge()
+            print(self.cursor_x, self.cursor_y)
             while time.time() < loop_start_time + 1/self.fps:
                 pass
 
@@ -163,5 +188,5 @@ class MouseLogger:
 
 
 if __name__ == "__main__":
-    logger = MouseLogger()
+    logger = MouseLogger(reset_cursor_flag=False)
     logger.mouse_log_test()
