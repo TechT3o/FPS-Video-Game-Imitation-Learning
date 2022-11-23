@@ -1,6 +1,7 @@
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score, accuracy_score
-from model_building import ModelBuilder
-from data_preprocessing import DataProcessor
+from agent_training.model_building import ModelBuilder
+from agent_training.data_preprocessing import DataProcessor
+from typing import Tuple
 import tensorflow as tf
 import os
 import numpy as np
@@ -12,24 +13,30 @@ class ModelTrainer:
     __model: tf.keras.Model
     augmentation: bool
     save_path: str
+    data_path: str
     BATCH_SIZE: int
     __metrics: dict
     __history: dict
 
-    def __init__(self, save_path: str, model_base: str = 'EfficientNet', augmentation: bool = None):
+    def __init__(self, save_path: str = '', data_path: str = '', model_base: str = 'EfficientNet',
+                 img_size: Tuple[int, int] = (240, 135), lstm_flag: str = 'LSTM', time_steps: int = 0,
+                 feature_chain_flag: bool = True, augmentation: bool = None):
         """
         class constructor
         :param save_path: path to save the model built
         :param model_base: flag for which model base to use
         :param augmentation: flag to augment input data or not
         """
-        self.model_builder = ModelBuilder(image_size=(252, 121), time_steps=10, channel_number=3,
-                                          base=model_base, lstm_flag='')
-        self.dataset = DataProcessor(data_path='', color_channels=1, image_size=(252, 121), normalize=True,
-                                     time_steps=10, test_fraction=0.2, validation_fraction=0.2)
+
+        if lstm_flag == 'LSTM' or time_steps > 0:
+            assert lstm_flag == 'LSTM' and time_steps > 0
+        self.model_builder = ModelBuilder(image_size=img_size, time_steps=time_steps, channel_number=3,
+                                          base=model_base, lstm_flag=lstm_flag, feature_chain_flag=feature_chain_flag)
+        self.dataset = DataProcessor(data_path=data_path, color_channels=3, image_size=img_size,
+                                     time_steps=time_steps, test_fraction=0.2, validation_fraction=0.2)
         self.__model = self.model_builder.model
         self.augmentation = False if augmentation is None else augmentation
-        self.save_path = os.getcwd() if save_path is None else save_path
+        self.save_path = os.getcwd() if save_path == '' else save_path
         self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
             self.dataset.x_val.shape[0]
         self.__metrics = {}
@@ -73,9 +80,9 @@ class ModelTrainer:
         """
         x_train = self.dataset.x_train
         x_val = self.dataset.x_val
-        if self.dataset.x_train.max() > 1:
-            x_train *= 1. / 255.
-            x_val *= 1. / 255.
+        # if self.dataset.x_train.max() > 1:
+        #     x_train *= 1. / 255.
+        #     x_val *= 1. / 255.
 
         callbacks = [
             tf.keras.callbacks.ModelCheckpoint(self.save_path + "\\model.h5", save_best_only=True, verbose=1),
@@ -98,6 +105,7 @@ class ModelTrainer:
                                               verbose=1)
             self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
         else:
+            # print(self.dataset.y_train.shape, self.dataset.y_val.shape)
             self.__history = self.__model.fit(x=x_train, y=self.dataset.y_train, batch_size=self.BATCH_SIZE,
                                               epochs=50000, callbacks=callbacks,
                                               validation_data=(x_val, self.dataset.y_val),

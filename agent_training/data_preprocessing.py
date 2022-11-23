@@ -1,7 +1,8 @@
+import cv2
 from sklearn.model_selection import train_test_split
-from data_normalizer import DataNormalizer
+from agent_training.data_normalizer import DataNormalizer
 import tensorflow as tf
-from typing import Tuple
+from typing import Tuple, List
 import numpy as np
 import os
 
@@ -23,24 +24,23 @@ class DataProcessor:
     __X: np.ndarray
     __y: np.ndarray
     __X_train: np.ndarray
-    __y_train: np.ndarray
+    __y_train: np.ndarray or List
     __X_val: np.ndarray
-    __y_val: np.ndarray
+    __y_val: np.ndarray or List
     __X_test: np.ndarray
-    __y_test: np.ndarray
+    __y_test: np.ndarray or List
 
-    def __init__(self, image_size: Tuple[int, int], color_channels: int, data_path: str = '', normalize: bool = False,
-                 validation_fraction: float = 0.2, test_fraction: float = 0.2, time_steps=None):
+    def __init__(self, image_size: Tuple[int, int], color_channels: int = 3, data_path: str = '',
+                 validation_fraction: float = 0.2, test_fraction: float = 0.2, time_steps: int = 0):
 
         self.data_path = data_path
         self.color_channels = color_channels
         self.__label_indices = dict()
         self.image_size = image_size
-        self.time_steps = 0 if time_steps is None else time_steps
+        self.time_steps = time_steps
         self.val_fraction = validation_fraction
         self.test_fraction = test_fraction
-        self.normalize = False if normalize is None else normalize
-        self.data_normalizer = DataNormalizer(self.data_path)
+        self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.image_paths = self.data_normalizer.image_paths
         self.prepare_data()
 
@@ -49,12 +49,12 @@ class DataProcessor:
         self.load_images()
         self.reshape_dataset()
         self.train_test_val_split()
+        self.seperate_labels_for_multiple_out()
 
     def load_data_labels(self) -> None:
 
         x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
         self.__y = np.hstack([x_labels, y_labels, click_labels])
-        print(self.__y.shape)
 
     def get_image(self, img_path) -> np.ndarray:
         """
@@ -72,52 +72,67 @@ class DataProcessor:
         Reshape the dataset to be loaded in an R-CNN
         :return: None
         """
-        if self.time_steps != 0 and len(self.__y.shape) == 1:
-            self.__X = self.__X.reshape((-1, self.time_steps, self.image_size[0],
-                                        self.image_size[1], self.color_channels))
-            self.__y = self.__y.reshape(-1, self.time_steps)
-            self.__y = self.__y = np.mean(self.__y, axis=1)
-        elif self.time_steps != 0:
-            self.__X = self.__X.reshape((-1, self.time_steps, self.image_size[0],
-                                        self.image_size[1], self.color_channels))
-            self.__y = self.__y.reshape((-1, self.time_steps, self.__y.shape[-1]))
-            self.__y = self.__y = np.mean(self.__y, axis=1)
+
+        # if self.time_steps != 0 and len(self.__y.shape) == 1:
+        #     self.__X = self.__X.reshape((-1, self.time_steps, self.image_size[0],
+        #                                 self.image_size[1], self.color_channels))
+        #     self.__y = self.__y.reshape(-1, self.time_steps)
+        #     self.__y = self.__y = np.mean(self.__y, axis=1)
+        if self.time_steps != 0:
+            # print(self.__X.shape)
+            self.__X = self.__X[:self.__X.shape[0]
+                                - (self.__X.shape[0] % self.time_steps)].reshape((-1, self.time_steps,
+                                                                                  self.image_size[0],
+                                                                                  self.image_size[1],
+                                                                                  self.color_channels))
+            self.__y = self.__y[: self.__y.shape[0] - (self.__y.shape[0]
+                                                       % self.time_steps)].reshape((-1,
+                                                                                    self.time_steps,
+                                                                                    self.__y.shape[-1]))
         if self.time_steps == 0:
-            self.__X = self.__X.squeeze(axis=4)
-            self.__X = np.swapaxes(self.__X, 1, -1)
             self.__X = np.swapaxes(self.__X, 1, 2)
 
     def preprocess_image(self, image):
         image = image / 255.
+        image = cv2.resize(image, self.image_size)
         return image
 
     def load_images(self):
-        X = []
+        x = []
         for image_path in self.image_paths:
             if '.jpg' in image_path:
                 processed_image = self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path)))
-                X.append(processed_image)
-        self.__X = np.array(X)
-        print(self.__X)
+                x.append(processed_image)
+        self.__X = np.array(x)
 
     def train_test_val_split(self) -> None:
         """
         Splits data in train, test and validation
         :return: None
         """
+        print(self.__X.shape, self.__y.shape)
         test_fraction = self.test_fraction / (1 - self.val_fraction)
 
         self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(self.__X, self.__y,
                                                                                       test_size=self.val_fraction,
-                                                                                      random_state=42, shuffle=True,
-                                                                                      stratify=self.__y)
+                                                                                      random_state=42, shuffle=True)
 
         self.__X_train, self.__X_test, self.__y_train, self.__y_test = train_test_split(self.__X_train,
                                                                                         self.__y_train,
                                                                                         test_size=test_fraction,
-                                                                                        random_state=42,
-                                                                                        shuffle=True,
-                                                                                        stratify=self.__y_train)
+                                                                                        random_state=42, shuffle=True)
+        print(self.__X_train.shape, self.__X_test.shape, self.__X_val.shape)
+        print(self.__y_train.shape, self.__y_test.shape, self.__y_val.shape)
+
+    def seperate_labels_for_multiple_out(self):
+        if self.time_steps > 0:
+            self.__y_train = [self.__y_train[:, :, 31:], self.__y_train[:, :, 0:19], self.__y_train[:, :, 19:31]]
+            self.__y_test = [self.__y_test[:, :, 31:], self.__y_test[:, :, 0:19], self.__y_test[:, :, 19:31]]
+            self.__y_val = [self.__y_val[:, :, 31:], self.__y_val[:, :, 0:19], self.__y_val[:, :, 19:31]]
+        else:
+            self.__y_train = [self.__y_train[:, 31:], self.__y_train[:, 0:19], self.__y_train[:, 19:31]]
+            self.__y_test = [self.__y_test[:, 31:], self.__y_test[:, 0:19], self.__y_test[:, 19:31]]
+            self.__y_val = [self.__y_val[:, 31:], self.__y_val[:, 0:19], self.__y_val[:, 19:31]]
 
     @property
     def x_train(self):
