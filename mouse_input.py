@@ -21,7 +21,7 @@ class MouseLogger:
     window_coordinates: Tuple[int, int, int, int]
     game_resets_cursor: bool
 
-    def __init__(self, window_coordinates: Tuple[int, int, int, int] = (GetSystemMetrics(0)/2, GetSystemMetrics(1)/2),
+    def __init__(self, window_coordinates: Tuple[int, int, int, int] = (0, 0, GetSystemMetrics(0), GetSystemMetrics(1)),
                  reset_cursor_flag: bool = True):
         """
         class constructor
