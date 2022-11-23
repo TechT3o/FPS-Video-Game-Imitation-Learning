@@ -16,7 +16,7 @@ class ModelBuilder:
     model_base: str
     lstm_flag: str
     base: str
-    input_shape: Tuple[int, int, int, int]
+    input_shape: Tuple[int, int, int, int] or Tuple[int, int, int]
     n_mouse_y: int
     n_mouse_x: int
     n_clicks: int
@@ -37,8 +37,8 @@ class ModelBuilder:
         self.feature_chain_flag = feature_chain_flag
         self.base = base
 
-        self.n_mouse_y = 12
-        self.n_mouse_x = 19
+        self.n_mouse_y = 13
+        self.n_mouse_x = 18
         self.n_clicks = 2
         self.n_features = 1
 

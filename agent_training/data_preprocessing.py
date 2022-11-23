@@ -49,11 +49,16 @@ class DataProcessor:
         self.load_images()
         self.reshape_dataset()
         self.train_test_val_split()
-        self.seperate_labels_for_multiple_out()
+        self.separate_labels_for_multiple_out()
 
     def load_data_labels(self) -> None:
 
         x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+        print(x_labels.shape)
+        self.mouse_x_len = x_labels.shape[1]
+        self.mouse_y_len = y_labels.shape[1]
+        self.clicks_len = click_labels.shape[1]
+        print(self.mouse_x_len, self.mouse_y_len, self.clicks_len)
         self.__y = np.hstack([x_labels, y_labels, click_labels])
 
     def get_image(self, img_path) -> np.ndarray:
@@ -121,18 +126,22 @@ class DataProcessor:
                                                                                         self.__y_train,
                                                                                         test_size=test_fraction,
                                                                                         random_state=42, shuffle=True)
-        print(self.__X_train.shape, self.__X_test.shape, self.__X_val.shape)
-        print(self.__y_train.shape, self.__y_test.shape, self.__y_val.shape)
 
-    def seperate_labels_for_multiple_out(self):
+    def separate_labels_for_multiple_out(self):
         if self.time_steps > 0:
-            self.__y_train = [self.__y_train[:, :, 31:], self.__y_train[:, :, 0:19], self.__y_train[:, :, 19:31]]
-            self.__y_test = [self.__y_test[:, :, 31:], self.__y_test[:, :, 0:19], self.__y_test[:, :, 19:31]]
-            self.__y_val = [self.__y_val[:, :, 31:], self.__y_val[:, :, 0:19], self.__y_val[:, :, 19:31]]
+            self.__y_train = [self.__y_train[:, :, -self.clicks_len:], self.__y_train[:, :, 0:self.mouse_x_len],
+                              self.__y_train[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            self.__y_test = [self.__y_test[:, :, -self.clicks_len:], self.__y_test[:, :, 0:self.mouse_x_len],
+                             self.__y_test[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            self.__y_val = [self.__y_val[:, :, -self.clicks_len:], self.__y_val[:, :, 0:self.mouse_x_len],
+                            self.__y_val[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
         else:
-            self.__y_train = [self.__y_train[:, 31:], self.__y_train[:, 0:19], self.__y_train[:, 19:31]]
-            self.__y_test = [self.__y_test[:, 31:], self.__y_test[:, 0:19], self.__y_test[:, 19:31]]
-            self.__y_val = [self.__y_val[:, 31:], self.__y_val[:, 0:19], self.__y_val[:, 19:31]]
+            self.__y_train = [self.__y_train[:, -self.clicks_len:], self.__y_train[:, 0:self.mouse_x_len],
+                              self.__y_train[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            self.__y_test = [self.__y_test[:, -self.clicks_len:], self.__y_test[:, 0:self.mouse_x_len],
+                             self.__y_test[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            self.__y_val = [self.__y_val[:, -self.clicks_len:], self.__y_val[:, 0:self.mouse_x_len],
+                            self.__y_val[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
 
     @property
     def x_train(self):

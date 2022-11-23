@@ -30,10 +30,11 @@ class ModelTrainer:
 
         if lstm_flag == 'LSTM' or time_steps > 0:
             assert lstm_flag == 'LSTM' and time_steps > 0
-        self.model_builder = ModelBuilder(image_size=img_size, time_steps=time_steps, channel_number=3,
-                                          base=model_base, lstm_flag=lstm_flag, feature_chain_flag=feature_chain_flag)
+
         self.dataset = DataProcessor(data_path=data_path, color_channels=3, image_size=img_size,
                                      time_steps=time_steps, test_fraction=0.2, validation_fraction=0.2)
+        self.model_builder = ModelBuilder(image_size=img_size, time_steps=time_steps, channel_number=3,
+                                          base=model_base, lstm_flag=lstm_flag, feature_chain_flag=feature_chain_flag)
         self.__model = self.model_builder.model
         self.augmentation = False if augmentation is None else augmentation
         self.save_path = os.getcwd() if save_path == '' else save_path
@@ -41,6 +42,7 @@ class ModelTrainer:
             self.dataset.x_val.shape[0]
         self.__metrics = {}
         self._train_and_evaluate_model()
+
 
     def image_generator(self) -> tf.keras.preprocessing.image.ImageDataGenerator:
         """

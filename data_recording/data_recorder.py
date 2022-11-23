@@ -1,5 +1,5 @@
 import os.path
-from mouse_input import MouseLogger
+from data_recording.mouse_input import MouseLogger
 from environment_extracting.environment_extraction import EnvironmentExtractor
 import time
 import csv
@@ -23,12 +23,12 @@ class DataRecorder:
         self.fps = 30
 
         if save_path == '':
-            self.data_path = os.path.join(os.getcwd(), 'data')
+            self.data_path = os.path.join(os.getcwd(), '../data')
             self.frames_path = os.path.join(self.data_path, 'frames')
             self.csv_path = os.path.join(self.data_path, 'csvs')
             self.create_saving_dirs()
         else:
-            self.data_path = os.path.join(save_path, 'data')
+            self.data_path = os.path.join(save_path, '../data')
             self.frames_path = os.path.join(self.data_path, 'frames')
             self.csv_path = os.path.join(self.data_path, 'csvs')
             self.create_saving_dirs()
@@ -67,7 +67,7 @@ class DataRecorder:
                 #                       self.mouse_logger.previous_cursor_x, self.mouse_logger.previous_cursor_y,
                 #                       self.mouse_logger.cursor_x, self.mouse_logger.cursor_y, self.mouse_logger.l_click,
                 #                       self.mouse_logger.hit_edge()])H
-                data_writer.writerow([os.path.join(os.path.join('data', 'frames'),
+                data_writer.writerow([os.path.join(os.path.join('../data', 'frames'),
                                                    os.path.join(f'recording_{timestamp}',
                                                                 f'Frame_{timestamp}_{frame_index}.jpg')),
                                       self.mouse_logger.d_x, self.mouse_logger.d_y, self.mouse_logger.l_click,
