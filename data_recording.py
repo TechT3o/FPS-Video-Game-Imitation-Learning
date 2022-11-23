@@ -68,19 +68,19 @@ class DataRecorder:
                 #                       self.mouse_logger.cursor_x, self.mouse_logger.cursor_y, self.mouse_logger.l_click,
                 #                       self.mouse_logger.hit_edge()])H
                 data_writer.writerow([os.path.join(os.path.join('data', 'frames'),
-                                                   f'Frame_{timestamp}_{frame_index}.jpg'), self.mouse_logger.d_x,
-                                      self.mouse_logger.d_y, self.mouse_logger.l_click, self.mouse_logger.hit_edge()])
+                                                   os.path.join(f'recording_{timestamp}',
+                                                                f'Frame_{timestamp}_{frame_index}.jpg')),
+                                      self.mouse_logger.d_x, self.mouse_logger.d_y, self.mouse_logger.l_click,
+                                      self.mouse_logger.hit_edge()])
                 frame_index += 1
                 while time.time() < loop_start_time + 1/self.fps:
                     pass
 
                 # right now it pauses if you click p and unpauses if you double click p
-                #TODO fix the data recorder controls
-                if win32api.GetAsyncKeyState(ord('P')):
-                    print('Paused')
+                if win32api.GetAsyncKeyState(ord('P')) != 0:
                     time.sleep(0.5)
-                    while not win32api.GetAsyncKeyState(ord('P')):
-                        print('still paused')
+                    while win32api.GetAsyncKeyState(ord('P')) == 0:
+                        continue
 
                 if win32api.GetAsyncKeyState(ord('Q')):
                     print('Quit')

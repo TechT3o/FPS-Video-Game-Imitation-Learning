@@ -3,7 +3,6 @@ from data_normalizer import DataNormalizer
 import tensorflow as tf
 from typing import Tuple
 import numpy as np
-import keyboard
 import os
 
 
@@ -33,6 +32,7 @@ class DataProcessor:
     def __init__(self, image_size: Tuple[int, int], color_channels: int, data_path: str = '', normalize: bool = False,
                  validation_fraction: float = 0.2, test_fraction: float = 0.2, time_steps=None):
 
+        self.data_path = data_path
         self.color_channels = color_channels
         self.__label_indices = dict()
         self.image_size = image_size
@@ -40,14 +40,21 @@ class DataProcessor:
         self.val_fraction = validation_fraction
         self.test_fraction = test_fraction
         self.normalize = False if normalize is None else normalize
-        self.data_normalizer = DataNormalizer(data_path)
-        self.load_dataset()
-
-
-    def load_dataset(self) -> None:
+        self.data_normalizer = DataNormalizer(self.data_path)
         self.image_paths = self.data_normalizer.image_paths
+        self.prepare_data()
+
+    def prepare_data(self):
+        self.load_data_labels()
+        self.load_images()
+        self.reshape_dataset()
+        self.train_test_val_split()
+
+    def load_data_labels(self) -> None:
+
         x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
-        print(self.image_paths)
+        self.__y = np.hstack([x_labels, y_labels, click_labels])
+        print(self.__y.shape)
 
     def get_image(self, img_path) -> np.ndarray:
         """
@@ -75,6 +82,23 @@ class DataProcessor:
                                         self.image_size[1], self.color_channels))
             self.__y = self.__y.reshape((-1, self.time_steps, self.__y.shape[-1]))
             self.__y = self.__y = np.mean(self.__y, axis=1)
+        if self.time_steps == 0:
+            self.__X = self.__X.squeeze(axis=4)
+            self.__X = np.swapaxes(self.__X, 1, -1)
+            self.__X = np.swapaxes(self.__X, 1, 2)
+
+    def preprocess_image(self, image):
+        image = image / 255.
+        return image
+
+    def load_images(self):
+        X = []
+        for image_path in self.image_paths:
+            if '.jpg' in image_path:
+                processed_image = self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path)))
+                X.append(processed_image)
+        self.__X = np.array(X)
+        print(self.__X)
 
     def train_test_val_split(self) -> None:
         """
@@ -118,6 +142,7 @@ class DataProcessor:
     @property
     def y_test(self):
         return self.__y_test
+
 
 if __name__ == "__main__":
     dp = DataProcessor((25, 25), 3, data_path='C:\\Users\\thpap\\PycharmProjects\\Video-games-target-generalization')
