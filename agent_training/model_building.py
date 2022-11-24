@@ -1,8 +1,7 @@
 from tensorflow import keras
-import tensorflow as tf
 from keras.models import Model
 from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout
-
+from agent_training.parameters import Parameters
 from keras.optimizers import Adam
 from keras.applications import EfficientNetB0, MobileNetV3Small
 from keras.losses import CategoricalCrossentropy
@@ -23,8 +22,7 @@ class ModelBuilder:
     n_features: int
     model: keras.layers.Layer
 
-    def __init__(self, image_size: Tuple[int, int], time_steps: int, channel_number: int,
-                 base: str = 'MobileNetv3', lstm_flag: str = 'LSTM', feature_chain_flag: bool = True):
+    def __init__(self, mouse_x: int, mouse_y: int, clicks: int, features: int = 0):
         """
         class constructor
         :param image_size: size of input images
@@ -33,20 +31,28 @@ class ModelBuilder:
         :param base: flag for which base to use available ones are 'EfficientNet' and 'LeNet5'
         :param lstm_flag: flag for model output to include an 'LSTM' layer
         """
-        self.lstm_flag = lstm_flag
-        self.feature_chain_flag = feature_chain_flag
-        self.base = base
 
-        self.n_mouse_y = 13
-        self.n_mouse_x = 18
-        self.n_clicks = 2
-        self.n_features = 1
+        self.params = Parameters()
+        self.data_path = self.params.data_path
+        self.color_channels = self.params.channel_size
+        self.image_size = (self.params.image_size_x, self.params.image_size_y)
+        self.time_steps = self.params.time_steps
+        self.val_fraction = self.params.validation_fraction
+        self.test_fraction = self.params.test_fraction
+        self.lstm_flag = self.params.lstm_flag
+        self.feature_chain_flag = self.params.feature_chain_flag
+        self.base = self.params.model_base
+
+        self.n_mouse_y = mouse_y
+        self.n_mouse_x = mouse_x
+        self.n_clicks = clicks
+        self.n_features = features
 
         if self.lstm_flag == 'LSTM':
-            self.input_shape = (time_steps, image_size[0], image_size[1], channel_number)
+            self.input_shape = (self.time_steps, self.image_size[0], self.image_size[1], self.color_channels)
             self.model = self._build_recurrent_output_chains()
         else:
-            self.input_shape = (image_size[0], image_size[1], channel_number)
+            self.input_shape = (self.image_size[0], self.image_size[1], self.color_channels)
             self.model = self._build_output_chains()
 
     def _build_base_model(self) -> Model:

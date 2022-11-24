@@ -3,7 +3,7 @@ from agent_training.model_building import ModelBuilder
 from agent_training.data_preprocessing import DataProcessor
 from typing import Tuple
 import tensorflow as tf
-import os
+from agent_training.parameters import Parameters
 import numpy as np
 
 
@@ -28,21 +28,29 @@ class ModelTrainer:
         :param augmentation: flag to augment input data or not
         """
 
-        if lstm_flag == 'LSTM' or time_steps > 0:
-            assert lstm_flag == 'LSTM' and time_steps > 0
+        self.params = Parameters()
+        self.save_path = self.params.save_path
+        self.data_path = self.params.data_path
+        self.color_channels = self.params.channel_size
+        self.image_size = (self.params.image_size_x, self.params.image_size_y)
+        self.time_steps = self.params.time_steps
+        self.val_fraction = self.params.validation_fraction
+        self.test_fraction = self.params.test_fraction
+        self.lstm_flag = self.params.lstm_flag
+        self.feature_chain_flag = self.params.feature_chain_flag
+        self.base = self.params.model_base
+        self.augmentation = self.params.augmentation
 
-        self.dataset = DataProcessor(data_path=data_path, color_channels=3, image_size=img_size,
-                                     time_steps=time_steps, test_fraction=0.2, validation_fraction=0.2)
-        self.model_builder = ModelBuilder(image_size=img_size, time_steps=time_steps, channel_number=3,
-                                          base=model_base, lstm_flag=lstm_flag, feature_chain_flag=feature_chain_flag)
+        if self.lstm_flag == 'LSTM' or self.time_steps > 0:
+            assert self.lstm_flag == 'LSTM' and self.time_steps > 0
+
+        self.dataset = DataProcessor()
+        self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len, self.dataset.clicks_len)
         self.__model = self.model_builder.model
-        self.augmentation = False if augmentation is None else augmentation
-        self.save_path = os.getcwd() if save_path == '' else save_path
         self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
             self.dataset.x_val.shape[0]
         self.__metrics = {}
         self._train_and_evaluate_model()
-
 
     def image_generator(self) -> tf.keras.preprocessing.image.ImageDataGenerator:
         """

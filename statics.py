@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Tuple
-import win32api, win32con
+import win32api
+import win32con
+import json
 import time
 import os
 
@@ -40,3 +42,9 @@ def discretize(value, discretizer):
 def check_and_create_directory(path_to_save):
     if not os.path.exists(path_to_save):
         os.mkdir(path_to_save)
+
+
+def json_to_dict(path: str):
+    with open(path) as json_file:
+        data = json.load(json_file)
+        return data

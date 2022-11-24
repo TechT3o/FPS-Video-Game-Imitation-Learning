@@ -1,6 +1,7 @@
 import cv2
 from sklearn.model_selection import train_test_split
 from agent_training.data_normalizer import DataNormalizer
+from agent_training.parameters import Parameters
 import tensorflow as tf
 from typing import Tuple, List
 import numpy as np
@@ -30,16 +31,17 @@ class DataProcessor:
     __X_test: np.ndarray
     __y_test: np.ndarray or List
 
-    def __init__(self, image_size: Tuple[int, int], color_channels: int = 3, data_path: str = '',
-                 validation_fraction: float = 0.2, test_fraction: float = 0.2, time_steps: int = 0):
+    def __init__(self):
 
-        self.data_path = data_path
-        self.color_channels = color_channels
+        self.params = Parameters()
+        self.data_path = self.params.data_path
+        self.color_channels = self.params.channel_size
+        self.image_size = (self.params.image_size_x, self.params.image_size_y)
+        self.time_steps = self.params.time_steps
+        self.val_fraction = self.params.validation_fraction
+        self.test_fraction = self.params.test_fraction
+
         self.__label_indices = dict()
-        self.image_size = image_size
-        self.time_steps = time_steps
-        self.val_fraction = validation_fraction
-        self.test_fraction = test_fraction
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.image_paths = self.data_normalizer.image_paths
         self.prepare_data()
@@ -115,7 +117,7 @@ class DataProcessor:
         Splits data in train, test and validation
         :return: None
         """
-        print(self.__X.shape, self.__y.shape)
+
         test_fraction = self.test_fraction / (1 - self.val_fraction)
 
         self.__X_train, self.__X_val, self.__y_train, self.__y_val = train_test_split(self.__X, self.__y,
@@ -169,4 +171,4 @@ class DataProcessor:
 
 
 if __name__ == "__main__":
-    dp = DataProcessor((25, 25), 3, data_path='C:\\Users\\thpap\\PycharmProjects\\Video-games-target-generalization')
+    dp = DataProcessor()
