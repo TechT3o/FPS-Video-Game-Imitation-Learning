@@ -23,12 +23,12 @@ class DataRecorder:
         self.fps = 30
 
         if save_path == '':
-            self.data_path = os.path.join(os.getcwd(), '../data')
+            self.data_path = os.path.join(os.getcwd(), 'data')
             self.frames_path = os.path.join(self.data_path, 'frames')
             self.csv_path = os.path.join(self.data_path, 'csvs')
             self.create_saving_dirs()
         else:
-            self.data_path = os.path.join(save_path, '../data')
+            self.data_path = os.path.join(save_path, 'data')
             self.frames_path = os.path.join(self.data_path, 'frames')
             self.csv_path = os.path.join(self.data_path, 'csvs')
             self.create_saving_dirs()
