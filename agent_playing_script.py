@@ -8,7 +8,7 @@ from win32api import GetAsyncKeyState
 from queue import Queue
 
 
-buffer = Queue(maxsize=50)
+# buffer = Queue(maxsize=50)
 
 lil_portillo = tf.keras.models.load_model('agent_1/agent.h5')
 print(lil_portillo.summary())
@@ -16,7 +16,8 @@ ACTION_SPACE_X = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 
 ACTION_SPACE_Y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
 
 FPS = 10
-start_countdown(3)
+start_countdown(6)
+buffer = []
 
 while True:
 
@@ -26,21 +27,24 @@ while True:
         img = np.array(sct.grab(monitor))[:, :, :3]
 
     processed_image = preprocess_image(img, (240, 135)).reshape((240, 135, 3))
-    buffer.put(processed_image)
+    # buffer.put(processed_image)
+    buffer.append(processed_image)
+    print(len(buffer))
 
-    click_pred, mouse_x_pred, mouse_y_pred = lil_portillo.predict_on_batch(x_input_main)
+    if len(buffer) >= 50:
+        click_pred, mouse_x_pred, mouse_y_pred = lil_portillo.predict_on_batch(np.array([buffer]))
+        buffer.pop(0)
+        x_predictions = np.round(mouse_x_pred)[0][-1]
+        y_predictions = np.round(mouse_y_pred)[0][-1]
+        click_predictions = np.round(click_pred)[0][-1]
 
-    x_predictions = np.round(mouse_x_pred)[0][-1]
-    y_predictions = np.round(mouse_y_pred)[0][-1]
-    click_predictions = np.round(click_pred)[0][-1]
+        print(x_predictions)
 
-    print(x_predictions)
+        x_motion = ACTION_SPACE_X[x_predictions.argmax()]
+        y_motion = ACTION_SPACE_Y[y_predictions.argmax()]
+        click = 0 if click_predictions.argmax() == 0 else 1
 
-    x_motion = ACTION_SPACE_X[x_predictions.argmax()]
-    y_motion = ACTION_SPACE_Y[y_predictions.argmax()]
-    click = 0 if click_predictions.argmax() == 0 else 1
-
-    mouse_action(x_motion, y_motion, click, 0.01)
+        mouse_action(x_motion, y_motion, click, 0.01)
 
     if GetAsyncKeyState(ord('Q')):
         print('Quit')
