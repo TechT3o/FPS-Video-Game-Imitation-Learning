@@ -8,7 +8,7 @@
   "image_size_x": 240,
   "image_size_y": 135,
   "channel_size": 3,
-  "time_steps": 10,
+  "time_steps": 50,
   "validation_fraction": 0.2,
   "test_fraction": 0.2,
   "loading_flag": "generator",
