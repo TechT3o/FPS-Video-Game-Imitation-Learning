@@ -5,7 +5,10 @@ import os
 
 class Parameters(metaclass=Singleton):
     def __init__(self):
-        self.parameter_dict = json_to_dict(os.path.join('agent_training', 'model_params.json'))
+        try:
+            self.parameter_dict = json_to_dict(os.path.join('agent_training', 'model_params.json'))
+        except FileNotFoundError:
+            self.parameter_dict = json_to_dict('model_params.json')
 
     @property
     def save_path(self):
@@ -54,3 +57,11 @@ class Parameters(metaclass=Singleton):
     @property
     def test_fraction(self):
         return self.parameter_dict['test_fraction']
+
+    @property
+    def loading_flag(self):
+        return self.parameter_dict['loading_flag']
+
+    @property
+    def batch_size(self):
+        return self.parameter_dict['batch_size']

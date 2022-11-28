@@ -1,6 +1,7 @@
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score, accuracy_score
 from agent_training.model_building import ModelBuilder
 from agent_training.data_preprocessing import DataProcessor
+from agent_training.data_generator import DataGenerator
 from typing import Tuple
 import tensorflow as tf
 from agent_training.parameters import Parameters
@@ -18,9 +19,7 @@ class ModelTrainer:
     __metrics: dict
     __history: dict
 
-    def __init__(self, save_path: str = '', data_path: str = '', model_base: str = 'EfficientNet',
-                 img_size: Tuple[int, int] = (240, 135), lstm_flag: str = 'LSTM', time_steps: int = 0,
-                 feature_chain_flag: bool = True, augmentation: bool = None):
+    def __init__(self):
         """
         class constructor
         :param save_path: path to save the model built
@@ -40,15 +39,20 @@ class ModelTrainer:
         self.feature_chain_flag = self.params.feature_chain_flag
         self.base = self.params.model_base
         self.augmentation = self.params.augmentation
+        self.loading_flag = self.params.loading_flag
+        self.BATCH_SIZE = self.params.batch_size
 
         if self.lstm_flag == 'LSTM' or self.time_steps > 0:
             assert self.lstm_flag == 'LSTM' and self.time_steps > 0
 
+        if self.loading_flag == 'generator':
+            self.train_generator = DataGenerator(data_flag='train')
+            self.validation_generator = DataGenerator(data_flag='validation')
         self.dataset = DataProcessor()
         self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len, self.dataset.clicks_len)
         self.__model = self.model_builder.model
-        self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
-            self.dataset.x_val.shape[0]
+        # self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
+        #     self.dataset.x_val.shape[0]
         self.__metrics = {}
         self._train_and_evaluate_model()
 
@@ -126,6 +130,26 @@ class ModelTrainer:
                                               verbose=1)
             self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
 
+    def _train_model_gen(self) -> None:
+        """
+        Trains the model for specific callbacks and saves the training history and the best model
+        :return: None
+        """
+
+        callbacks = [
+            tf.keras.callbacks.ModelCheckpoint(self.save_path + "\\model.h5", save_best_only=True, verbose=1),
+            tf.keras.callbacks.CSVLogger(self.save_path + '\\training.log'),
+            tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=40, verbose=1,
+                                             mode="min")]
+
+        self.__history = self.__model.fit_generator(generator=self.train_generator,
+                                                    validation_data=self.validation_generator, epochs=50000,
+                                                    steps_per_epoch=self.dataset.x_train.shape[0] // self.BATCH_SIZE,
+                                                    validation_steps=self.dataset.x_val.shape[0] // self.BATCH_SIZE,
+                                                    callbacks=callbacks, workers=6)
+
+        self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
+
     def _predict(self, images: np.ndarray) -> np.ndarray:
         """
         Uses the model to make a prediction for the input image
@@ -140,23 +164,54 @@ class ModelTrainer:
         :return: None
         """
         x_test = self.dataset.x_test
-        y_test = self.dataset.y_test
-        predictions = self._predict(x_test)
-        if len(y_test.shape) == 1:
-            predictions = predictions[:, 0]
-        predictions = np.round(predictions)
-        self.__metrics["f1_score"] = f1_score(y_test, predictions, average=None)
-        self.__metrics["precision"] = precision_score(y_test, predictions, average=None)
-        self.__metrics["recall"] = recall_score(y_test, predictions, average=None)
-        self.__metrics["roc_auc"] = roc_auc_score(y_test, predictions, average=None)
-        self.__metrics["accuracy"] = accuracy_score(y_test, predictions)
+        click_test, mouse_x_test, mouse_y_test = self.dataset.y_test
+        click_pred, mouse_x_pred, mouse_y_pred = self._predict(x_test)
+
+        x_predictions = np.round(mouse_x_pred)
+        y_predictions = np.round(mouse_y_pred)
+        click_predictions = np.round(click_pred)
+
+        mouse_y_test = mouse_y_test.reshape((mouse_y_test.shape[0] * mouse_y_test.shape[1], mouse_y_test.shape[2]))
+        mouse_x_test = mouse_x_test.reshape((mouse_x_test.shape[0] * mouse_x_test.shape[1], mouse_x_test.shape[2]))
+        click_test = click_test.reshape((click_test.shape[0] * click_test.shape[1], click_test.shape[2]))
+
+        click_predictions = click_predictions.reshape((click_predictions.shape[0] * click_predictions.shape[1], click_predictions.shape[2]))
+        x_predictions = x_predictions.reshape((x_predictions.shape[0] * x_predictions.shape[1], x_predictions.shape[2]))
+        y_predictions = y_predictions.reshape((y_predictions.shape[0] * y_predictions.shape[1], y_predictions.shape[2]))
+
+        print(mouse_x_test.shape, x_predictions.shape)
+        print(mouse_y_test.shape, y_predictions.shape)
+        print(click_test.shape, click_predictions.shape)
+
+        self.__metrics["mouse_x_f1_score"] = f1_score(mouse_x_test, x_predictions, average=None)
+        # self.__metrics["mouse_x_precision"] = precision_score(mouse_x_test, x_predictions, average=None)
+        self.__metrics["mouse_x_recall"] = recall_score(mouse_x_test, x_predictions, average=None)
+        # self.__metrics["mouse_x_roc_auc"] = roc_auc_score(mouse_x_test, x_predictions, average=None)
+        self.__metrics["mouse_x_accuracy"] = accuracy_score(mouse_x_test, x_predictions)
+
+        self.__metrics["mouse_y_f1_score"] = f1_score(mouse_y_test, y_predictions, average=None)
+        # self.__metrics["mouse_y_precision"] = precision_score(mouse_y_test, y_predictions, average=None)
+        self.__metrics["mouse_y_recall"] = recall_score(mouse_y_test, y_predictions, average=None)
+        # self.__metrics["mouse_y_roc_auc"] = roc_auc_score(mouse_y_test, y_predictions, average=None)
+        self.__metrics["mouse_y_accuracy"] = accuracy_score(mouse_y_test, y_predictions)
+
+        self.__metrics["click_f1_score"] = f1_score(click_test, click_predictions, average=None)
+        # self.__metrics["click_precision"] = precision_score(click_test, click_predictions, average=None)
+        self.__metrics["click_recall"] = recall_score(click_test, click_predictions, average=None)
+        # self.__metrics["click_roc_auc"] = roc_auc_score(click_test, click_predictions, average=None)
+        self.__metrics["click_accuracy"] = accuracy_score(click_test, click_predictions)
+
+        print(self.__metrics)
 
     def _train_and_evaluate_model(self) -> None:
         """
         Trains and evaluates the model
         :return: None
         """
-        self._train_model()
+        if self.loading_flag == 'generator':
+            self._train_model_gen()
+        else:
+            self._train_model()
         self._evaluate()
 
     @property

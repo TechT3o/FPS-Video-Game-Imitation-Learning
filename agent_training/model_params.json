@@ -1,7 +1,7 @@
 {
   "save_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\models",
   "data_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization",
-  "model_base": "MobileNetv3",
+  "model_base": "",
   "lstm_flag": "LSTM",
   "feature_chain_flag": 0,
   "augmentation": 0,
@@ -10,5 +10,7 @@
   "channel_size": 3,
   "time_steps": 10,
   "validation_fraction": 0.2,
-  "test_fraction": 0.2
+  "test_fraction": 0.2,
+  "loading_flag": "generator",
+  "batch_size": 4
 }

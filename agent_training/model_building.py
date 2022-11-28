@@ -1,6 +1,6 @@
 from tensorflow import keras
 from keras.models import Model
-from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout
+from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout, Conv2D, BatchNormalization
 from agent_training.parameters import Parameters
 from keras.optimizers import Adam
 from keras.applications import EfficientNetB0, MobileNetV3Small
@@ -86,6 +86,23 @@ class ModelBuilder:
 
             intermediate_model = Model(inputs=base_model.input, outputs=base_model.layers[161].output)
             intermediate_model.trainable = True
+        else:
+
+            if self.lstm_flag == 'LSTM':
+                input_conv = Input(shape=self.input_shape[1:])
+            else:
+                input_conv = Input(shape=self.input_shape)
+
+            conv = Conv2D(12, (5, 5), padding='same', strides=2, activation='relu')(input_conv)
+            # MaxPooling2D((2, 2), strides=2)(conv)
+            conv = BatchNormalization()(conv)
+            conv = Dropout(0.4)(conv)
+            conv = Conv2D(12, (5, 5), strides=2, padding='same', activation='relu')(conv)
+            # MaxPooling2D((2, 2), strides=2)(conv)
+            conv = BatchNormalization()(conv)
+            conv = Dropout(0.4)(conv)
+            conv = Flatten()(conv)
+            intermediate_model = Model(inputs=input_conv, outputs=conv)
         return intermediate_model
 
     def _build_output_chains(self) -> Model:
@@ -95,7 +112,7 @@ class ModelBuilder:
         """
         intermediate_model = self._build_base_model()
         input_1 = Input(shape=self.input_shape, name='main_in')
-        # x = TimeDistributed(intermediate_model)(input_1)
+        x = intermediate_model(input_1)
 
         # x = ConvLSTM2D(filters=512, kernel_size=(3, 3), stateful=False, return_sequences=True,
         #                dropout=0.5, recurrent_dropout=0.5)(x)

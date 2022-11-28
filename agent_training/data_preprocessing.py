@@ -40,6 +40,7 @@ class DataProcessor:
         self.time_steps = self.params.time_steps
         self.val_fraction = self.params.validation_fraction
         self.test_fraction = self.params.test_fraction
+        self.batch_size = self.params.batch_size
 
         self.__label_indices = dict()
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
@@ -56,12 +57,13 @@ class DataProcessor:
     def load_data_labels(self) -> None:
 
         x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
-        print(x_labels.shape)
+        # print(x_labels.shape)
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]
         self.clicks_len = click_labels.shape[1]
-        print(self.mouse_x_len, self.mouse_y_len, self.clicks_len)
+        # print(self.mouse_x_len, self.mouse_y_len, self.clicks_len)
         self.__y = np.hstack([x_labels, y_labels, click_labels])
+        self.labels = self.__y
 
     def get_image(self, img_path) -> np.ndarray:
         """
