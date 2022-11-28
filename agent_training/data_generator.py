@@ -23,16 +23,23 @@ class DataGenerator(keras.utils.Sequence):
         self.image_size = (self.params.image_size_x, self.params.image_size_y)
         self.time_steps = self.params.time_steps
         self.val_fraction = self.params.validation_fraction
-        self.test_fraction = self.params.test_fraction
 
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.list_IDs = self.data_normalizer.image_paths
-
         self.load_data_labels()
+
+        if self.data_path == "validation":
+            validation_size = int(len(self.list_IDs) * self.val_fraction)
+            self.list_IDs = self.list_IDs[-validation_size:]
+            self.labels = self.labels[-validation_size:]
+
+        if self.data_path == "training":
+            training_size = int(len(self.list_IDs) * (1 - self.val_fraction))
+            self.list_IDs = self.list_IDs[:training_size]
+            self.labels = self.labels[:training_size]
+
         self.reshape_ids_and_labels()
-
         self.data_size = len(self.list_IDs)
-
         self.shuffle = shuffle
         self.on_epoch_end()
 
