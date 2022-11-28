@@ -45,7 +45,7 @@ class DataProcessor:
         self.__label_indices = dict()
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.image_paths = self.data_normalizer.image_paths
-        self.prepare_data()
+        # self.prepare_data()
 
     def prepare_data(self):
         self.load_data_labels()
@@ -63,7 +63,6 @@ class DataProcessor:
         self.clicks_len = click_labels.shape[1]
         # print(self.mouse_x_len, self.mouse_y_len, self.clicks_len)
         self.__y = np.hstack([x_labels, y_labels, click_labels])
-        self.labels = self.__y
 
     def get_image(self, img_path) -> np.ndarray:
         """
@@ -110,7 +109,7 @@ class DataProcessor:
         x = []
         for image_path in self.image_paths:
             if '.jpg' in image_path:
-                processed_image = self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path)))
+                processed_image = self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path.split('/')[-1])))
                 x.append(processed_image)
         self.__X = np.array(x)
 

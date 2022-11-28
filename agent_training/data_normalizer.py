@@ -1,12 +1,13 @@
 import os
 import numpy as np
 import pandas as pd
+from singleton import Singleton
 
 
-class DataNormalizer:
+class DataNormalizer(metaclass=Singleton):
     def __init__(self, data_path: str = ''):
 
-        self.csv_path = os.path.join(data_path, 'data\\csvs')
+        self.csv_path = os.path.join(data_path, os.path.join('data', 'csvs'))
         self.action_space_x = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
         self.action_space_y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
 
@@ -28,6 +29,7 @@ class DataNormalizer:
         return one_hot_dataframe_x, one_hot_dataframe_y, one_hot_dataframe_click
 
     def load_csvs(self):
+        print("Loading csvs")
         for csv_file in os.listdir(self.csv_path):
             sample_dataframe = pd.read_csv(os.path.join(self.csv_path, csv_file))
             self.data_dataframe = pd.concat([self.data_dataframe, sample_dataframe], axis=0, ignore_index=True)

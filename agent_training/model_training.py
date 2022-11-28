@@ -48,8 +48,13 @@ class ModelTrainer:
         if self.loading_flag == 'generator':
             self.train_generator = DataGenerator(data_flag='train')
             self.validation_generator = DataGenerator(data_flag='validation')
-        self.dataset = DataProcessor()
-        self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len, self.dataset.clicks_len)
+            self.model_builder = ModelBuilder(self.train_generator.mouse_x_len, self.train_generator.mouse_y_len,
+                                              self.train_generator.clicks_len)
+        else:
+            self.dataset = DataProcessor()
+            self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len,
+                                              self.dataset.clicks_len)
+
         self.__model = self.model_builder.model
         # self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
         #     self.dataset.x_val.shape[0]
@@ -94,9 +99,6 @@ class ModelTrainer:
         """
         x_train = self.dataset.x_train
         x_val = self.dataset.x_val
-        # if self.dataset.x_train.max() > 1:
-        #     x_train *= 1. / 255.
-        #     x_val *= 1. / 255.
 
         callbacks = [
             tf.keras.callbacks.ModelCheckpoint(self.save_path + "\\model.h5", save_best_only=True, verbose=1),
@@ -144,8 +146,8 @@ class ModelTrainer:
 
         self.__history = self.__model.fit_generator(generator=self.train_generator,
                                                     validation_data=self.validation_generator, epochs=50000,
-                                                    steps_per_epoch=self.dataset.x_train.shape[0] // self.BATCH_SIZE,
-                                                    validation_steps=self.dataset.x_val.shape[0] // self.BATCH_SIZE,
+                                                    steps_per_epoch=self.train_generator.data_size // self.BATCH_SIZE,
+                                                    validation_steps=self.validation_generator.data_size // self.BATCH_SIZE,
                                                     callbacks=callbacks, workers=6)
 
         self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
@@ -179,9 +181,9 @@ class ModelTrainer:
         x_predictions = x_predictions.reshape((x_predictions.shape[0] * x_predictions.shape[1], x_predictions.shape[2]))
         y_predictions = y_predictions.reshape((y_predictions.shape[0] * y_predictions.shape[1], y_predictions.shape[2]))
 
-        print(mouse_x_test.shape, x_predictions.shape)
-        print(mouse_y_test.shape, y_predictions.shape)
-        print(click_test.shape, click_predictions.shape)
+        # print(mouse_x_test.shape, x_predictions.shape)
+        # print(mouse_y_test.shape, y_predictions.shape)
+        # print(click_test.shape, click_predictions.shape)
 
         self.__metrics["mouse_x_f1_score"] = f1_score(mouse_x_test, x_predictions, average=None)
         # self.__metrics["mouse_x_precision"] = precision_score(mouse_x_test, x_predictions, average=None)
@@ -212,7 +214,7 @@ class ModelTrainer:
             self._train_model_gen()
         else:
             self._train_model()
-        self._evaluate()
+            self._evaluate()
 
     @property
     def history(self):

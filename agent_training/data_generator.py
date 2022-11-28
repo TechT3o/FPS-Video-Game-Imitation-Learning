@@ -1,7 +1,9 @@
 # code adapted from https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
 import numpy as np
 from tensorflow import keras
-from agent_training.data_preprocessing import DataProcessor
+from agent_training.data_preprocessing import DataNormalizer
+from agent_training.parameters import Parameters
+
 from sklearn.model_selection import train_test_split
 import cv2
 import os
@@ -10,25 +12,29 @@ import tensorflow as tf
 
 class DataGenerator(keras.utils.Sequence):
 
-    def __init__(self, data_flag, shuffle=True):
+    def __init__(self, data_flag: str, shuffle=True):
 
         self.data_flag = data_flag
-        self.data_processor = DataProcessor()
-        self.data_path = self.data_processor.data_path
-        self.image_size = self.data_processor.image_size
-        self.time_steps = self.data_processor.time_steps
-        self.val_fraction = self.data_processor.val_fraction
-        self.test_fraction = self.data_processor.test_fraction
-        self.batch_size = self.data_processor.batch_size
 
-        self.color_channels = self.data_processor.color_channels
-        self.list_IDs = self.data_processor.image_paths
-        self.labels = self.data_processor.labels
+        self.params = Parameters()
+        self.batch_size = self.params.batch_size
+        self.data_path = self.params.data_path
+        self.color_channels = self.params.channel_size
+        self.image_size = (self.params.image_size_x, self.params.image_size_y)
+        self.time_steps = self.params.time_steps
+        self.val_fraction = self.params.validation_fraction
+        self.test_fraction = self.params.test_fraction
+
+        self.data_normalizer = DataNormalizer(data_path=self.data_path)
+        self.list_IDs = self.data_normalizer.image_paths
+
+        self.load_data_labels()
         self.reshape_ids_and_labels()
+
+        self.data_size = len(self.list_IDs)
 
         self.shuffle = shuffle
         self.on_epoch_end()
-        self.train_test_val_split()
 
     def __len__(self):
         return int(np.floor(len(self.list_IDs) / self.batch_size))
@@ -52,6 +58,7 @@ class DataGenerator(keras.utils.Sequence):
         X = self.__data_generation(list_IDs_temp)
         # print(f'data_shape {X.shape}')
         y = self.seperate_labels(y)
+        print("Loading data")
         # print(f'labels are {y}')
 
         return X, y
@@ -62,6 +69,7 @@ class DataGenerator(keras.utils.Sequence):
             np.random.shuffle(self.indexes)
 
     def reshape_ids_and_labels(self):
+        print('Reshaping paths and labels')
         if self.time_steps != 0:
 
             self.list_IDs = self.list_IDs[:self.list_IDs.shape[0]
@@ -96,11 +104,11 @@ class DataGenerator(keras.utils.Sequence):
 
     def seperate_labels(self, y):
         if self.time_steps > 0:
-            y = [y[:, :, -self.data_processor.clicks_len:], y[:, :, 0:self.data_processor.mouse_x_len],
-                 y[:, :, self.data_processor.mouse_x_len:self.data_processor.mouse_x_len+self.data_processor.mouse_y_len]]
+            y = [y[:, :, -self.clicks_len:], y[:, :, 0:self.mouse_x_len],
+                 y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
         else:
-            y = [y[:, -self.data_processor.clicks_len:], y[:, 0:self.data_processor.mouse_x_len],
-                 y[:, self.data_processor.mouse_x_len:self.data_processor.mouse_x_len+self.data_processor.mouse_y_len]]
+            y = [y[:, -self.clicks_len:], y[:, 0:self.mouse_x_len],
+                 y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
         return y
 
     def preprocess_image(self, image):
@@ -113,7 +121,7 @@ class DataGenerator(keras.utils.Sequence):
         for image_path in image_ids:
             if '.jpg' in image_path:
                 # print(os.path.join(self.data_path, image_path))
-                images.append(self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path))))
+                images.append(self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path.split('/')[-1]))))
         return images
 
     def get_image(self, img_path) -> np.ndarray:
@@ -126,6 +134,16 @@ class DataGenerator(keras.utils.Sequence):
                                                       interpolation="lanczos")
         image = tf.keras.preprocessing.image.img_to_array(image, data_format=None)
         return image
+
+    def load_data_labels(self) -> None:
+
+        x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+        # print(x_labels.shape)
+        self.mouse_x_len = x_labels.shape[1]
+        self.mouse_y_len = y_labels.shape[1]
+        self.clicks_len = click_labels.shape[1]
+        # print(self.mouse_x_len, self.mouse_y_len, self.clicks_len)
+        self.labels = np.hstack([x_labels, y_labels, click_labels])
 
 
 if __name__ == "__main__":
