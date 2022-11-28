@@ -1,14 +1,7 @@
 import cv2
 import numpy as np
 import mss
-import time
-import win32api
-import win32con
-from typing import Tuple
-from statics import  start_countdown, mouse_click_at
-
-
-
+from statics import start_countdown, mouse_click_at
 
 SHOOTING_WAIT = 0.05
 SECONDS_TO_RUN = 30

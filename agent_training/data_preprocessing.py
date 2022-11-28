@@ -2,6 +2,7 @@ import cv2
 from sklearn.model_selection import train_test_split
 from agent_training.data_normalizer import DataNormalizer
 from agent_training.parameters import Parameters
+from statics import preprocess_image
 import tensorflow as tf
 from typing import Tuple, List
 import numpy as np
@@ -32,7 +33,9 @@ class DataProcessor:
     __y_test: np.ndarray or List
 
     def __init__(self):
-
+        """
+        class constructor
+        """
         self.params = Parameters()
         self.data_path = self.params.data_path
         self.color_channels = self.params.channel_size
@@ -48,6 +51,10 @@ class DataProcessor:
         # self.prepare_data()
 
     def prepare_data(self):
+        """
+        function that loads labels and images, reshapes them and splits them in train, test and val
+        :return: None
+        """
         self.load_data_labels()
         self.load_images()
         self.reshape_dataset()
@@ -55,13 +62,14 @@ class DataProcessor:
         self.separate_labels_for_multiple_out()
 
     def load_data_labels(self) -> None:
-
+        """
+        loads labels from DataNormalizer object
+        :return: None
+        """
         x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
-        # print(x_labels.shape)
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]
         self.clicks_len = click_labels.shape[1]
-        # print(self.mouse_x_len, self.mouse_y_len, self.clicks_len)
         self.__y = np.hstack([x_labels, y_labels, click_labels])
 
     def get_image(self, img_path) -> np.ndarray:
@@ -100,12 +108,21 @@ class DataProcessor:
         if self.time_steps == 0:
             self.__X = np.swapaxes(self.__X, 1, 2)
 
-    def preprocess_image(self, image):
+    def preprocess_image(self, image: np.ndarray) -> np.ndarray:
+        """
+        preprocesses the image to make it in a form to input to the model
+        :param image: image to be processed
+        :return: processed image
+        """
         image = image / 255.
         image = cv2.resize(image, self.image_size)
         return image
 
-    def load_images(self):
+    def load_images(self) -> None:
+        """
+        Loads all the preprocessed images from the image path, preprocesses them and stores them in a numpy array
+        :return: None
+        """
         x = []
         for image_path in self.image_paths:
             if '.jpg' in image_path:
@@ -131,6 +148,10 @@ class DataProcessor:
                                                                                         random_state=42, shuffle=True)
 
     def separate_labels_for_multiple_out(self):
+        """
+        Separates the split labels in the list form that the model requires
+        :return: None
+        """
         if self.time_steps > 0:
             self.__y_train = [self.__y_train[:, :, -self.clicks_len:], self.__y_train[:, :, 0:self.mouse_x_len],
                               self.__y_train[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]

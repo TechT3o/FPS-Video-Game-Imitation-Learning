@@ -4,6 +4,9 @@ import os
 
 
 class Parameters(metaclass=Singleton):
+    """
+    Singleton class that reads parameters from a json files and is called from other classes to access the parameters
+    """
     def __init__(self):
         try:
             self.parameter_dict = json_to_dict(os.path.join('agent_training', 'model_params.json'))

@@ -33,7 +33,11 @@ class DataRecorder:
             self.csv_path = os.path.join(self.data_path, 'csvs')
             self.create_saving_dirs()
 
-    def create_saving_dirs(self):
+    def create_saving_dirs(self) -> None:
+        """
+        Creates saving directories
+        :return: None
+        """
 
         check_and_create_directory(self.data_path)
         check_and_create_directory(self.frames_path)

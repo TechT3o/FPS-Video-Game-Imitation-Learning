@@ -2,13 +2,15 @@ from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_sco
 from agent_training.model_building import ModelBuilder
 from agent_training.data_preprocessing import DataProcessor
 from agent_training.data_generator import DataGenerator
-from typing import Tuple
 import tensorflow as tf
 from agent_training.parameters import Parameters
 import numpy as np
 
 
 class ModelTrainer:
+    """
+    Trains and evaluates models
+    """
     model_builder: ModelBuilder
     dataset: DataProcessor
     __model: tf.keras.Model
@@ -22,9 +24,6 @@ class ModelTrainer:
     def __init__(self):
         """
         class constructor
-        :param save_path: path to save the model built
-        :param model_base: flag for which model base to use
-        :param augmentation: flag to augment input data or not
         """
 
         self.params = Parameters()
@@ -46,7 +45,7 @@ class ModelTrainer:
             assert self.lstm_flag == 'LSTM' and self.time_steps > 0
 
         if self.loading_flag == 'generator':
-            self.train_generator = DataGenerator(data_flag='train')
+            self.train_generator = DataGenerator(data_flag='training')
             self.validation_generator = DataGenerator(data_flag='validation')
             self.model_builder = ModelBuilder(self.train_generator.mouse_x_len, self.train_generator.mouse_y_len,
                                               self.train_generator.clicks_len)
@@ -63,7 +62,7 @@ class ModelTrainer:
 
     def image_generator(self) -> tf.keras.preprocessing.image.ImageDataGenerator:
         """
-        Keras generator that takes the datasetX augments it and the inputs it in the model training
+        Keras generator that takes the datasetX augments it and then inputs it in the model training
         :return: keras image data generator object
         """
         return tf.keras.preprocessing.image.ImageDataGenerator(
