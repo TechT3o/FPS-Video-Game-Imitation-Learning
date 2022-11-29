@@ -33,19 +33,23 @@ class DataGenerator(keras.utils.Sequence):
 
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.list_IDs = self.data_normalizer.image_paths
+        print(len(self.list_IDs), self.data_flag)
         self.load_data_labels()
 
-        if self.data_path == "validation":
+        if self.data_flag == "validation":
             validation_size = int(len(self.list_IDs) * self.val_fraction)
+            print(validation_size)
             self.list_IDs = self.list_IDs[-validation_size:]
             self.labels = self.labels[-validation_size:]
 
-        if self.data_path == "training":
+        if self.data_flag == "training":
             training_size = int(len(self.list_IDs) * (1 - self.val_fraction))
+            print(training_size)
             self.list_IDs = self.list_IDs[:training_size]
             self.labels = self.labels[:training_size]
 
         self.reshape_ids_and_labels()
+        self.debias_shooting()
         self.data_size = len(self.list_IDs)
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -170,6 +174,28 @@ class DataGenerator(keras.utils.Sequence):
         self.mouse_y_len = y_labels.shape[1]
         self.clicks_len = click_labels.shape[1]
         self.labels = np.hstack([x_labels, y_labels, click_labels])
+
+    def find_shooting_labels(self) -> List:
+        """
+        Finds which labels have shooting in them
+        :return: None
+        """
+        shooting_index = []
+        for index, label in enumerate(self.labels):
+            if 1 in label[-2:]:
+                shooting_index.append(index)
+            else:
+                continue
+        return shooting_index[0:len(shooting_index)]
+
+    def debias_shooting(self) -> None:
+        """
+        Keeps only image ids and labels that have shooting in their time steps
+        :return:
+        """
+        indexes = self.find_shooting_labels()
+        self.list_IDs = self.list_IDs[indexes]
+        self.labels = self.labels[indexes]
 
 
 if __name__ == "__main__":

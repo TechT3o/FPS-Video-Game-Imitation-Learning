@@ -54,6 +54,7 @@ class ModelTrainer:
             self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len,
                                               self.dataset.clicks_len)
 
+        print([np.isin(x, self.train_generator.list_IDs).any() for x in self.validation_generator.list_IDs])
         self.__model = self.model_builder.model
         # self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
         #     self.dataset.x_val.shape[0]

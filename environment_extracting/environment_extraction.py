@@ -15,13 +15,27 @@ class EnvironmentExtractor:
     target_mask: np.ndarray
     target_centers: List
 
-    def __init__(self, window_capture_coordinates):
+    def __init__(self, window_capture_coordinates: Tuple[int, int, int, int] = (0, 0, 1920, 1080)):
         """"""
         self.ocr = OCR()
         self.screen_coordinates = window_capture_coordinates
         self.frame = self.get_image()
         self.target_mask = np.array([])
         self.target_centers = []
+
+        self.lower_color = np.array([10, 78, 209])
+        self.upper_color = np.array([21, 115, 255])
+        self.AREA = 40
+
+        # 3d aimtrainer color
+        # self.lower_color = np.array([9, 81, 255])
+        # self.upper_color = np.array([28, 154, 255])
+        # self.AREA = 40
+
+        # Aim Lab color
+        # self.lower_color = np.array([82, 130, 10])
+        # self.upper_color = np.array([96, 255, 255])
+        # self.AREA = 500
 
     def get_image(self) -> np.ndarray:
         """
@@ -50,15 +64,14 @@ class EnvironmentExtractor:
         """
         # hard coded hsv values that give the blue color of Aimlabs circles. Found using color_selection_tool.py
         hsv = cv2.cvtColor(self.frame.copy(), cv2.COLOR_BGR2HSV)
-        lower_color = np.array([82, 130, 10])
-        upper_color = np.array([96, 255, 255])
-        mask = cv2.inRange(hsv, lower_color, upper_color)
+
+        mask = cv2.inRange(hsv, self.lower_color, self.upper_color)
         # manipulates mask to make smoother
         mask = cv2.erode(mask, (15, 15))
         mask = cv2.dilate(mask, (5, 5))
         self.target_mask = cv2.dilate(mask, (5, 5))
 
-    def find_targets(self) -> None:
+    def find_targets(self, visualize: bool = False) -> None:
         """
         Finds centers of contours of the mask which has the color filtered objects
         :return: None
@@ -70,12 +83,27 @@ class EnvironmentExtractor:
             x = int(moment["m10"] / (moment["m00"] + 1e-5))
             y = int(moment["m01"] / (moment["m00"] + 1e-5))
             # filter by area size
-            if moment["m00"] < 500:
+            if moment["m00"] < self.AREA:
                 continue
-            # Uncomment to illustrate found targets on image
-            # cv2.drawContours(img, contour, -1, (0, 0, 255), 2)
-            # cv2.circle(img, (x, y), radius=1, color=(0, 0, 255), thickness=2)
+            if visualize:
+                cv2.drawContours(self.frame, contour, -1, (0, 0, 255), 2)
+                cv2.circle(self.frame, (x, y), radius=1, color=(0, 0, 255), thickness=2)
             self.target_centers.append((x, y))
+        if visualize:
+            cv2.imshow('contoured img', cv2.resize(self.frame, (240*4, 135*4)))
+            cv2.waitKey(1)
+
+    def clear_targets(self):
+        self.target_centers = []
+
+    def test_extractor(self):
+        while True:
+            self.frame = self.get_image()
+            self.color_filtering()
+            self.find_targets(visualize=True)
+            print(self.number_of_targets)
+            self.clear_targets()
+        # cv2.destroyAllWindows()
 
     @property
     def number_of_targets(self):
@@ -84,3 +112,8 @@ class EnvironmentExtractor:
     @property
     def score_history(self):
         return self.ocr.score_history
+
+
+if __name__ == "__main__":
+    env_ext = EnvironmentExtractor((0, 0, 1920, 1080))
+    env_ext.test_extractor()

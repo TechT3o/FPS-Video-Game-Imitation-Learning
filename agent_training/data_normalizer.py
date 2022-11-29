@@ -14,11 +14,14 @@ class DataNormalizer(metaclass=Singleton):
         :param data_path: path where the csv files are stored
         """
         self.csv_path = os.path.join(data_path, os.path.join('data', 'csvs'))
-        self.action_space_x = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
+        self.action_space_x = np.array([-300, -200, -150, -100, -50, -25, -10,
+                                        -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
         self.action_space_y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
 
-        self.discretize_x_function = np.vectorize(lambda x: self.action_space_x[(np.abs(self.action_space_x - x)).argmin()])
-        self.discretize_y_function = np.vectorize(lambda y: self.action_space_y[(np.abs(self.action_space_y - y)).argmin()])
+        self.discretize_x_function = np.vectorize(lambda x:
+                                                  self.action_space_x[(np.abs(self.action_space_x - x)).argmin()])
+        self.discretize_y_function = np.vectorize(lambda y:
+                                                  self.action_space_y[(np.abs(self.action_space_y - y)).argmin()])
         self.data_dataframe = pd.DataFrame()
         self.load_csvs()
         # print(self.data_dataframe)
