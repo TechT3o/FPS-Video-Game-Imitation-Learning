@@ -30,6 +30,7 @@ class DataGenerator(keras.utils.Sequence):
         self.image_size = (self.params.image_size_x, self.params.image_size_y)
         self.time_steps = self.params.time_steps
         self.val_fraction = self.params.validation_fraction
+        self.debias_flag = self.params.debias_shooting
 
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.list_IDs = self.data_normalizer.image_paths
@@ -49,7 +50,10 @@ class DataGenerator(keras.utils.Sequence):
             self.labels = self.labels[:training_size]
 
         self.reshape_ids_and_labels()
-        self.debias_shooting()
+
+        if self.debias_flag:
+            self.debias_shooting()
+
         self.data_size = len(self.list_IDs)
         self.shuffle = shuffle
         self.on_epoch_end()

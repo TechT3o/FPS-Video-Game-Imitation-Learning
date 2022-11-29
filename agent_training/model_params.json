@@ -12,5 +12,6 @@
   "validation_fraction": 0.2,
   "test_fraction": 0.2,
   "loading_flag": "generator",
-  "batch_size": 4
+  "batch_size": 4,
+  "debias_shooting": 0
 }
