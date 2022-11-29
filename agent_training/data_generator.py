@@ -34,18 +34,15 @@ class DataGenerator(keras.utils.Sequence):
 
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.list_IDs = self.data_normalizer.image_paths
-        print(len(self.list_IDs), self.data_flag)
         self.load_data_labels()
 
         if self.data_flag == "validation":
             validation_size = int(len(self.list_IDs) * self.val_fraction)
-            print(validation_size)
             self.list_IDs = self.list_IDs[-validation_size:]
             self.labels = self.labels[-validation_size:]
 
         if self.data_flag == "training":
             training_size = int(len(self.list_IDs) * (1 - self.val_fraction))
-            print(training_size)
             self.list_IDs = self.list_IDs[:training_size]
             self.labels = self.labels[:training_size]
 
