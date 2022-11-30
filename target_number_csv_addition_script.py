@@ -2,7 +2,6 @@ from environment_extracting.environment_extraction import EnvironmentExtractor
 from agent_training.data_normalizer import DataNormalizer
 import cv2
 import os
-import pandas as pd
 
 DATA_PATH = "C:\\\\Users\\\\thpap\\\\Dropbox"
 
@@ -22,5 +21,5 @@ for image_path in data_normalizer.image_paths:
     env_extractor.clear_targets()
 
 data_normalizer.data_dataframe["Target no"] = target_number_list
-data_normalizer.data_dataframe.to_csv('csv_w_targets.csv')
+data_normalizer.data_dataframe.to_csv('csv_w_targets.csv', mode= 'w+')
 

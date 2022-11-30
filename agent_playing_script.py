@@ -5,17 +5,13 @@ import time
 import mss
 from win32api import GetAsyncKeyState
 
-from queue import Queue
 
-
-# buffer = Queue(maxsize=50)
-
-lil_portillo = tf.keras.models.load_model('agent_1/agent.h5')
+lil_portillo = tf.keras.models.load_model('agent_2/agent.h5')
 print(lil_portillo.summary())
 ACTION_SPACE_X = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
 ACTION_SPACE_Y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
 
-FPS = 30
+FPS = 24
 start_countdown(6)
 buffer = []
 
@@ -27,11 +23,9 @@ while True:
         img = np.array(sct.grab(monitor))[:, :, :3]
 
     processed_image = preprocess_image(img, (240, 135)).reshape((240, 135, 3))
-    # buffer.put(processed_image)
     buffer.append(processed_image)
-    # print(len(buffer))
 
-    if len(buffer) >= 50:
+    if len(buffer) >= 30:
         click_pred, mouse_x_pred, mouse_y_pred = lil_portillo.predict_on_batch(np.array([buffer]))
         buffer.pop(0)
         x_predictions = mouse_x_pred[0][-1]

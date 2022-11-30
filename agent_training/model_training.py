@@ -48,11 +48,11 @@ class ModelTrainer:
             self.train_generator = DataGenerator(data_flag='training')
             self.validation_generator = DataGenerator(data_flag='validation')
             self.model_builder = ModelBuilder(self.train_generator.mouse_x_len, self.train_generator.mouse_y_len,
-                                              self.train_generator.clicks_len)
+                                              self.train_generator.clicks_len, self.train_generator.features_len)
         else:
             self.dataset = DataProcessor()
             self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len,
-                                              self.dataset.clicks_len)
+                                              self.dataset.clicks_len, self.dataset.features_len)
 
         self.__model = self.model_builder.model
         # self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \

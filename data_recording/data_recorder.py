@@ -55,7 +55,7 @@ class DataRecorder:
         check_and_create_directory(current_frames_path)
 
         with open(file_path, 'w', newline='') as csv_file:
-            start_countdown(5)
+            start_countdown(8)
             data_writer = csv.writer(csv_file)
             # data_writer.writerow(["Image Path", "Start X", "Start Y", "End X", "End Y", "Shot", "Hit Edge Flag"])
             data_writer.writerow(["Image Path", "Delta X", "Delta Y", "Shot", "Hit Edge Flag"])

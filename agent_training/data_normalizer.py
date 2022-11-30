@@ -8,11 +8,12 @@ class DataNormalizer(metaclass=Singleton):
     """
     class that reads the csv data gets the image paths and cleans and discretizes them to a form used to be classified
     """
-    def __init__(self, data_path: str = ''):
+    def __init__(self, data_path: str = '', game_feature_chain: int = 0):
         """
         class constructor
         :param data_path: path where the csv files are stored
         """
+        self.game_features_flag = game_feature_chain
         self.csv_path = os.path.join(data_path, os.path.join('data', 'csvs'))
         self.action_space_x = np.array([-300, -200, -150, -100, -50, -25, -10,
                                         -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
@@ -39,6 +40,10 @@ class DataNormalizer(metaclass=Singleton):
         one_hot_y = pd.get_dummies(self.data_dataframe['Delta Y']).to_numpy()
         one_hot_click = pd.get_dummies(self.data_dataframe['Shot']).to_numpy()
 
+        if self.game_features_flag:
+            one_hot_features = pd.get_dummies(self.data_dataframe['Target no']).to_numpy()
+            return one_hot_x, one_hot_y, one_hot_click, one_hot_features
+
         return one_hot_x, one_hot_y, one_hot_click
 
     def load_csvs(self):
@@ -46,7 +51,8 @@ class DataNormalizer(metaclass=Singleton):
         Loads the csv files in a pandas dataframe
         :return: None
         """
-
+        if self.game_features_flag:
+            self.data_dataframe = pd.read_csv(os.path.join(self.csv_path, "csv_targets - Copy.csv"))
         for csv_file in os.listdir(self.csv_path):
             sample_dataframe = pd.read_csv(os.path.join(self.csv_path, csv_file))
             self.data_dataframe = pd.concat([self.data_dataframe, sample_dataframe], axis=0, ignore_index=True)
@@ -73,6 +79,10 @@ class DataNormalizer(metaclass=Singleton):
     @property
     def click_values(self):
         return self.data_dataframe['Shot'].values
+
+    @property
+    def number_of_targets(self):
+        return self.data_dataframe['Target no'].values
 
 
 if __name__ == "__main__":

@@ -31,18 +31,23 @@ class DataGenerator(keras.utils.Sequence):
         self.time_steps = self.params.time_steps
         self.val_fraction = self.params.validation_fraction
         self.debias_flag = self.params.debias_shooting
+        self.game_features_flag = self.params.feature_chain_flag
 
-        self.data_normalizer = DataNormalizer(data_path=self.data_path)
+        self.features_len = 0
+        self.data_normalizer = DataNormalizer(data_path=self.data_path, game_feature_chain=self.game_features_flag)
         self.list_IDs = self.data_normalizer.image_paths
         self.load_data_labels()
+        print(len(self.list_IDs))
 
         if self.data_flag == "validation":
             validation_size = int(len(self.list_IDs) * self.val_fraction)
+            print(validation_size)
             self.list_IDs = self.list_IDs[-validation_size:]
             self.labels = self.labels[-validation_size:]
 
         if self.data_flag == "training":
             training_size = int(len(self.list_IDs) * (1 - self.val_fraction))
+            print(training_size)
             self.list_IDs = self.list_IDs[:training_size]
             self.labels = self.labels[:training_size]
 
@@ -124,12 +129,24 @@ class DataGenerator(keras.utils.Sequence):
         Separates the split labels in the list form that the model requires
         :return: None
         """
-        if self.time_steps > 0:
-            y = [y[:, :, -self.clicks_len:], y[:, :, 0:self.mouse_x_len],
-                 y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+
+        if self.game_features_flag:
+            if self.time_steps > 0:
+                y = [y[:, :, 0:self.features_len], y[:, :, -self.clicks_len:],
+                     y[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                     y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            else:
+                y = [y[:, 0:self.features_len], y[:, -self.clicks_len:],
+                     y[:, self.features_len:self.features_len+self.mouse_x_len],
+                     y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+
         else:
-            y = [y[:, -self.clicks_len:], y[:, 0:self.mouse_x_len],
-                 y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            if self.time_steps > 0:
+                y = [y[:, :, -self.clicks_len:], y[:, :, 0:self.mouse_x_len],
+                     y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            else:
+                y = [y[:, -self.clicks_len:], y[:, 0:self.mouse_x_len],
+                     y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
         return y
 
     def preprocess_image(self, image: np.ndarray) -> np.ndarray:
@@ -170,11 +187,18 @@ class DataGenerator(keras.utils.Sequence):
         loads labels from DataNormalizer object
         :return: None
         """
-        x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+
+        if self.game_features_flag:
+            x_labels, y_labels, click_labels, feature_labels = self.data_normalizer.one_hot_encoding()
+            self.labels = np.hstack([feature_labels, x_labels, y_labels, click_labels])
+            self.features_len = feature_labels.shape[1]
+        else:
+            x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+            self.labels = np.hstack([x_labels, y_labels, click_labels])
+
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]
         self.clicks_len = click_labels.shape[1]
-        self.labels = np.hstack([x_labels, y_labels, click_labels])
 
     def find_shooting_labels(self) -> List:
         """
@@ -183,7 +207,7 @@ class DataGenerator(keras.utils.Sequence):
         """
         shooting_index = []
         for index, label in enumerate(self.labels):
-            if 1 in label[-2:]:
+            if 1 in label[:, -1]:
                 shooting_index.append(index)
             else:
                 continue

@@ -1,8 +1,9 @@
 from data_recording.data_recorder import DataRecorder
 from win32api import GetSystemMetrics
 
-# WINDOW_COORDINATES = (0, 0, 1920, 1080)
-WINDOW_COORDINATES = (0, 0, GetSystemMetrics(0), GetSystemMetrics(1))
+WINDOW_COORDINATES = (0, 0, 1920, 1080)
+# WINDOW_COORDINATES = (0, 0, GetSystemMetrics(0), GetSystemMetrics(1))
+# print(GetSystemMetrics(0), GetSystemMetrics(1))
 RESET_CURSOR_FLAG = False
 SAVE_PATH = ''
 # print(win32api.GetSystemMetrics(0), win32api.GetSystemMetrics(1))

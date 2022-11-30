@@ -93,11 +93,19 @@ class ModelBuilder:
             else:
                 input_conv = Input(shape=self.input_shape)
 
-            conv = Conv2D(12, (9, 9), padding='same', strides=2, activation='relu')(input_conv)
+            conv = Conv2D(12, (5, 5), padding='same', strides=2, activation='relu')(input_conv)
             # MaxPooling2D((2, 2), strides=2)(conv)
             conv = BatchNormalization()(conv)
             conv = Dropout(0.4)(conv)
-            conv = Conv2D(12, (5, 5), strides=2, padding='same', activation='relu')(conv)
+            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
+            # MaxPooling2D((2, 2), strides=2)(conv)
+            conv = BatchNormalization()(conv)
+            conv = Dropout(0.4)(conv)
+            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
+            # MaxPooling2D((2, 2), strides=2)(conv)
+            conv = BatchNormalization()(conv)
+            conv = Dropout(0.4)(conv)
+            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
             # MaxPooling2D((2, 2), strides=2)(conv)
             conv = BatchNormalization()(conv)
             conv = Dropout(0.4)(conv)
@@ -132,10 +140,6 @@ class ModelBuilder:
 
         # 4) set up outputs, separate outputs will allow separate losses to be applied
 
-        if self.feature_chain_flag:
-            flat = Dense(32, activation='relu')(flat)
-            output_1 = Dense(self.n_features, activation='sigmoid')(flat)
-
         output_2 = Dense(self.n_clicks, activation='sigmoid', name='click_out')(dense_5)
         output_3 = Dense(self.n_mouse_x, activation='softmax', name='mouse_x_out')(dense_5)  # softmax since mouse is mutually exclusive
         output_4 = Dense(self.n_mouse_y, activation='softmax', name='mouse_y_out')(dense_5)
@@ -143,21 +147,19 @@ class ModelBuilder:
         output_all = [output_2, output_3, output_4]
         # output_all = concatenate([output_2, output_3, output_4], axis=-1)
         # output_all = concatenate([output_1, output_2, output_3, output_4, output_5], axis=-1)
-
-        # 5) finish model definition
         if self.feature_chain_flag:
-            model = Model(input_1, [output_1, output_all])
+            output_1 = Dense(self.n_features, activation='sigmoid')(flat)
+            output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
                     'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
-            model = Model(input_1, output_all)
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
                     'click_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
-
+        model = Model(input_1, output_all)
         model.compile(optimizer=Adam(1e-3), loss=loss, metrics=metrics)
 
         print(model.summary())
@@ -185,10 +187,6 @@ class ModelBuilder:
 
         # 4) set up outputs, separate outputs will allow separate losses to be applied
 
-        if self.feature_chain_flag:
-            flat = Dense(32, activation='relu')(flat)
-            output_1 = Dense(self.n_features, activation='sigmoid', name='features_out')(flat)
-
         output_2 = TimeDistributed(Dense(self.n_clicks, activation='sigmoid'), name='click_out')(dense_5)
         output_3 = TimeDistributed(Dense(self.n_mouse_x, activation='softmax'), name='mouse_x_out')(dense_5)
         # softmax since mouse is mutually exclusive
@@ -200,22 +198,22 @@ class ModelBuilder:
 
         # 5) finish model definition
         if self.feature_chain_flag:
-            model = Model(input_1, [output_1, output_all])
+            output_1 = TimeDistributed(Dense(self.n_features, activation='sigmoid'), name='features_out')(flat)
+            output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
                     'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
-            model = Model(input_1, output_all)
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
                     'click_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
-
+        model = Model(input_1, output_all)
         model.compile(optimizer=Adam(1e-3), loss=loss, metrics=metrics)
         print(model.summary())
         return model
 
 
 if __name__ == "__main__":
-    builder = ModelBuilder((224, 121), 10, 3, base='EfficientNetB0', lstm_flag='')
+    builder = ModelBuilder(18, 13, 2, 1)

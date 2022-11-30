@@ -84,5 +84,5 @@ def preprocess_image(image: np.ndarray, image_size: Tuple[int, int]) -> np.ndarr
     :return: processed image
     """
     image = image / 255.
-    image = cv2.resize(image, image_size)
+    image = cv2.resize(image, image_size, interpolation=cv2.INTER_LINEAR)
     return image
