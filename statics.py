@@ -40,8 +40,7 @@ def mouse_action(x_motion, y_motion, click, shoot_wait_time: float = 0.1) -> Non
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
         time.sleep(.01)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
-
-    time.sleep(shoot_wait_time)
+        time.sleep(shoot_wait_time)
 
 
 def start_countdown(countdown_number: int) -> None:
