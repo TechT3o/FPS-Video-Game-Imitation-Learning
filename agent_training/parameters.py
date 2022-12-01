@@ -80,3 +80,7 @@ class Parameters(metaclass=Singleton):
     @property
     def agent_path(self):
         return self.parameter_dict['agent_path']
+
+    @property
+    def dagger_path(self):
+        return self.parameter_dict['dagger_path']

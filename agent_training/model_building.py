@@ -3,7 +3,8 @@ from keras.models import Model
 from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout, Conv2D, BatchNormalization
 from agent_training.parameters import Parameters
 from keras.optimizers import Adam
-from keras.applications import EfficientNetB0, MobileNetV3Small, ResNet50V2
+# from keras.applications.efficientnet_v2 import EfficientNetV2S
+from keras.applications import EfficientNetB0, MobileNetV3Small, ResNet50V2, NASNetMobile
 from keras.losses import CategoricalCrossentropy, BinaryCrossentropy
 from typing import Tuple
 
@@ -61,7 +62,18 @@ class ModelBuilder:
         :return: keras model object
         """
 
-        if self.base == 'ResNet50V2':
+        if self.base == "NASNetMobile":
+            print("NASNetMobile")
+            if self.lstm_flag == 'LSTM':
+                base_model = NASNetMobile(include_top=False, weights="imagenet",
+                                        input_shape=self.input_shape[1:], pooling=None)
+            else:
+                base_model = NASNetMobile(include_top=False, weights="imagenet",
+                                        input_shape=self.input_shape, pooling=None)
+            base_model.trainable = True
+            intermediate_model = Model(inputs=base_model.input, outputs=base_model.output)
+            intermediate_model.trainable = True
+        elif self.base == 'ResNet50V2':
             print('ResNet50v2')
 
             if self.lstm_flag == 'LSTM':

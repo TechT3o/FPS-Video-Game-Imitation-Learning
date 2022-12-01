@@ -32,12 +32,12 @@ class DataProcessor:
     __X_test: np.ndarray
     __y_test: np.ndarray or List
 
-    def __init__(self):
+    def __init__(self, data_path=None):
         """
         class constructor
         """
         self.params = Parameters()
-        self.data_path = self.params.data_path
+        self.data_path = self.params.data_path if data_path is None else data_path
         self.color_channels = self.params.channel_size
         self.image_size = (self.params.image_size_x, self.params.image_size_y)
         self.time_steps = self.params.time_steps
@@ -50,7 +50,7 @@ class DataProcessor:
         self.__label_indices = dict()
         self.data_normalizer = DataNormalizer(data_path=self.data_path)
         self.image_paths = self.data_normalizer.image_paths
-        # self.prepare_data()
+        self.prepare_data()
 
     def prepare_data(self):
         """
@@ -74,6 +74,7 @@ class DataProcessor:
             self.features_len = feature_labels.shape[1]
         else:
             x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+            # x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding_experimental()
             self.__y = np.hstack([x_labels, y_labels, click_labels])
 
         self.mouse_x_len = x_labels.shape[1]

@@ -19,6 +19,9 @@ class DataNormalizer(metaclass=Singleton):
                                         -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
         self.action_space_y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
 
+        self.one_hot_matrix_x = np.eye(len(self.action_space_x), len(self.action_space_x))
+        self.one_hot_matrix_y = np.eye(len(self.action_space_y), len(self.action_space_y))
+
         self.discretize_x_function = np.vectorize(lambda x:
                                                   self.action_space_x[(np.abs(self.action_space_x - x)).argmin()])
         self.discretize_y_function = np.vectorize(lambda y:
@@ -30,6 +33,24 @@ class DataNormalizer(metaclass=Singleton):
         self.data_dataframe['Delta X'] = self.discretize_x_function(self.data_dataframe['Delta X'].values)
         self.data_dataframe['Delta Y'] = self.discretize_y_function(self.data_dataframe['Delta Y'].values)
         self.one_hot_encoding()
+
+    def one_hot_encoding_experimental(self):
+        """
+        Encodes the available actions in one hot form to be used as classification labels
+        :return: numpy arrays with the one-hot encoding for the x_motion, y_motion, click actions
+        """
+        x = self.data_dataframe['Delta X'].to_numpy()
+        y = self.data_dataframe['Delta Y'].to_numpy()
+        one_hot_x = self.one_hot_encode_x(x)
+        one_hot_y = self.one_hot_encode_y(y)
+        one_hot_click = pd.get_dummies(self.data_dataframe['Shot']).to_numpy()
+        print(one_hot_x, one_hot_y, one_hot_click)
+
+        if self.game_features_flag:
+            one_hot_features = pd.get_dummies(self.data_dataframe['Target no']).to_numpy()
+            return one_hot_x, one_hot_y, one_hot_click, one_hot_features
+
+        return one_hot_x, one_hot_y, one_hot_click
 
     def one_hot_encoding(self):
         """
@@ -57,6 +78,18 @@ class DataNormalizer(metaclass=Singleton):
             for csv_file in os.listdir(self.csv_path):
                 sample_dataframe = pd.read_csv(os.path.join(self.csv_path, csv_file))
                 self.data_dataframe = pd.concat([self.data_dataframe, sample_dataframe], axis=0, ignore_index=True)
+
+    def one_hot_encode_x(self, array):
+        one_hot = []
+        for element in array:
+            one_hot.append(self.one_hot_matrix_x[np.where(self.action_space_x == element)[0]])
+        return one_hot
+
+    def one_hot_encode_y(self, array):
+        one_hot = []
+        for element in array:
+            one_hot.append(self.one_hot_matrix_x[np.where(self.action_space_x == element)[0]])
+        return one_hot
 
     def keep_non_edge_data(self):
         """
