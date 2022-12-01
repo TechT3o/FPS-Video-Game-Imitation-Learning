@@ -49,6 +49,7 @@ class ModelTrainer:
             self.validation_generator = DataGenerator(data_flag='validation')
             self.model_builder = ModelBuilder(self.train_generator.mouse_x_len, self.train_generator.mouse_y_len,
                                               self.train_generator.clicks_len, self.train_generator.features_len)
+            print(self.train_generator.features_len, self.validation_generator.features_len)
         else:
             self.dataset = DataProcessor()
             self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len,
@@ -140,7 +141,7 @@ class ModelTrainer:
         callbacks = [
             tf.keras.callbacks.ModelCheckpoint(self.save_path + "\\model.h5", save_best_only=True, verbose=1),
             tf.keras.callbacks.CSVLogger(self.save_path + '\\training.log'),
-            tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=40, verbose=1,
+            tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=20, verbose=1,
                                              mode="min")]
 
         self.__history = self.__model.fit_generator(generator=self.train_generator,

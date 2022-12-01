@@ -1,7 +1,7 @@
 {
   "save_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\models",
   "data_path": "C:\\\\Users\\\\thpap\\\\Dropbox",
-  "model_base": "",
+  "model_base": "CNN",
   "lstm_flag": "LSTM",
   "feature_chain_flag": 1,
   "augmentation": 0,
@@ -13,5 +13,7 @@
   "test_fraction": 0.2,
   "loading_flag": "generator",
   "batch_size": 4,
-  "debias_shooting": 0
+  "debias_shooting": 0,
+  "one_shot_path": "",
+  "agent_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\agent_1\\\\"
 }

@@ -3,8 +3,8 @@ from keras.models import Model
 from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout, Conv2D, BatchNormalization
 from agent_training.parameters import Parameters
 from keras.optimizers import Adam
-from keras.applications import EfficientNetB0, MobileNetV3Small
-from keras.losses import CategoricalCrossentropy
+from keras.applications import EfficientNetB0, MobileNetV3Small, ResNet50V2
+from keras.losses import CategoricalCrossentropy, BinaryCrossentropy
 from typing import Tuple
 
 
@@ -60,7 +60,22 @@ class ModelBuilder:
         Builds the CNN base model
         :return: keras model object
         """
-        if self.base == 'MobileNetv3':
+
+        if self.base == 'ResNet50V2':
+            print('ResNet50v2')
+
+            if self.lstm_flag == 'LSTM':
+                base_model = ResNet50V2(include_top=False, weights="imagenet",
+                                        input_shape=self.input_shape[1:], pooling=None)
+            else:
+                base_model = ResNet50V2(include_top=False, weights="imagenet",
+                                        input_shape=self.input_shape, pooling=None)
+            base_model.trainable = True
+
+            intermediate_model = Model(inputs=base_model.input, outputs=base_model.output)
+            intermediate_model.trainable = True
+        elif self.base == 'MobileNetv3':
+            print('MobileNetv3')
 
             if self.lstm_flag == 'LSTM':
                 base_model = MobileNetV3Small(input_shape=self.input_shape[1:], alpha=1.0, minimalistic=False,
@@ -73,8 +88,8 @@ class ModelBuilder:
             intermediate_model = Model(inputs=base_model.input, outputs=base_model.output)
             intermediate_model.trainable = True
 
-        if self.base == 'EfficientNetB0':
-
+        elif self.base == 'EfficientNetB0':
+            print('EfficientNetB0')
             if self.lstm_flag == 'LSTM':
                 base_model = EfficientNetB0(weights='imagenet', input_shape=self.input_shape[1:], include_top=False,
                                             drop_connect_rate=0.2)
@@ -87,7 +102,7 @@ class ModelBuilder:
             intermediate_model = Model(inputs=base_model.input, outputs=base_model.layers[161].output)
             intermediate_model.trainable = True
         else:
-
+            print('CNN')
             if self.lstm_flag == 'LSTM':
                 input_conv = Input(shape=self.input_shape[1:])
             else:
@@ -148,15 +163,15 @@ class ModelBuilder:
         # output_all = concatenate([output_2, output_3, output_4], axis=-1)
         # output_all = concatenate([output_1, output_2, output_3, output_4, output_5], axis=-1)
         if self.feature_chain_flag:
-            output_1 = Dense(self.n_features, activation='sigmoid')(flat)
+            output_1 = Dense(self.n_features, activation='softmax')(flat)
             output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                    'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy()}
+                    'click_out': BinaryCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
         model = Model(input_1, output_all)
@@ -172,14 +187,14 @@ class ModelBuilder:
         """
         intermediate_model = self._build_base_model()
         input_1 = Input(shape=self.input_shape, name='main_in')
-        x = TimeDistributed(intermediate_model)(input_1)
+        x = TimeDistributed(intermediate_model, name='base_model')(input_1)
 
         # x = ConvLSTM2D(filters=512, kernel_size=(3, 3), stateful=False, return_sequences=True,
         #                dropout=0.5, recurrent_dropout=0.5)(x)
 
-        flat = TimeDistributed(Flatten())(x)
+        flat = TimeDistributed(Flatten(), name='flatten')(x)
 
-        x = LSTM(256, stateful=False, return_sequences=True, dropout=0., recurrent_dropout=0.)(flat)
+        x = LSTM(256, stateful=False, return_sequences=True, dropout=0., recurrent_dropout=0., name='lstm')(flat)
         x = TimeDistributed(Dropout(0.5))(x)
 
         # 3) add shared fc layers
@@ -198,15 +213,15 @@ class ModelBuilder:
 
         # 5) finish model definition
         if self.feature_chain_flag:
-            output_1 = TimeDistributed(Dense(self.n_features, activation='sigmoid'), name='features_out')(flat)
+            output_1 = TimeDistributed(Dense(self.n_features, activation='softmax'), name='features_out')(flat)
             output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                    'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy()}
+                    'click_out': BinaryCrossentropy}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
         model = Model(input_1, output_all)

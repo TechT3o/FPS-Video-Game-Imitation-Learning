@@ -53,9 +53,10 @@ class DataNormalizer(metaclass=Singleton):
         """
         if self.game_features_flag:
             self.data_dataframe = pd.read_csv(os.path.join(self.csv_path, "csv_targets - Copy.csv"))
-        for csv_file in os.listdir(self.csv_path):
-            sample_dataframe = pd.read_csv(os.path.join(self.csv_path, csv_file))
-            self.data_dataframe = pd.concat([self.data_dataframe, sample_dataframe], axis=0, ignore_index=True)
+        else:
+            for csv_file in os.listdir(self.csv_path):
+                sample_dataframe = pd.read_csv(os.path.join(self.csv_path, csv_file))
+                self.data_dataframe = pd.concat([self.data_dataframe, sample_dataframe], axis=0, ignore_index=True)
 
     def keep_non_edge_data(self):
         """

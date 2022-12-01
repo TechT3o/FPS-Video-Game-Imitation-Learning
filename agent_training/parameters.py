@@ -72,3 +72,11 @@ class Parameters(metaclass=Singleton):
     @property
     def debias_shooting(self):
         return self.parameter_dict['debias_shooting']
+
+    @property
+    def one_shot_path(self):
+        return self.parameter_dict['one_shot_path']
+
+    @property
+    def agent_path(self):
+        return self.parameter_dict['agent_path']

@@ -6,7 +6,7 @@ import mss
 from win32api import GetAsyncKeyState
 
 
-lil_portillo = tf.keras.models.load_model('agent_2/agent.h5')
+lil_portillo = tf.keras.models.load_model('agent_3/agent.h5')
 print(lil_portillo.summary())
 ACTION_SPACE_X = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
 ACTION_SPACE_Y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
@@ -25,8 +25,8 @@ while True:
     processed_image = preprocess_image(img, (240, 135)).reshape((240, 135, 3))
     buffer.append(processed_image)
 
-    if len(buffer) >= 30:
-        click_pred, mouse_x_pred, mouse_y_pred = lil_portillo.predict_on_batch(np.array([buffer]))
+    if len(buffer) >= 15:
+        features, click_pred, mouse_x_pred, mouse_y_pred = lil_portillo.predict_on_batch(np.array([buffer]))
         buffer.pop(0)
         x_predictions = mouse_x_pred[0][-1]
         y_predictions = mouse_y_pred[0][-1]
