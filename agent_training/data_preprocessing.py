@@ -135,7 +135,7 @@ class DataProcessor:
         x = []
         for image_path in self.image_paths:
             if '.jpg' in image_path:
-                processed_image = self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path.split('/')[-1])))
+                processed_image = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
                 x.append(processed_image)
         self.__X = np.array(x)
 

@@ -83,8 +83,12 @@ def preprocess_image(image: np.ndarray, image_size: Tuple[int, int]) -> np.ndarr
     :param image_size: size to reshape image in
     :return: processed image
     """
-    image = image / 255.
+    # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, image_size, interpolation=cv2.INTER_LINEAR)
+    # cv2.imshow('img', image)
+    # cv2.waitKey(1)
+    image = image / 255.
+
     return image
 
 

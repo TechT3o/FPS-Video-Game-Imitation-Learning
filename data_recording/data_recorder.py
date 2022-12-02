@@ -49,7 +49,6 @@ class DataRecorder:
         check_and_create_directory(current_frames_path)
 
         with open(file_path, 'w', newline='') as csv_file:
-            start_countdown(3)
             data_writer = csv.writer(csv_file)
             # data_writer.writerow(["Image Path", "Start X", "Start Y", "End X", "End Y", "Shot", "Hit Edge Flag"])
             data_writer.writerow(["Image Path", "Delta X", "Delta Y", "Shot", "Hit Edge Flag"])
@@ -60,11 +59,6 @@ class DataRecorder:
                 # print(self.mouse_logger.d_x, self.mouse_logger.d_y)
                 image_save_path = os.path.join(current_frames_path, f'Frame_{timestamp}_{frame_index}.jpg')
                 imwrite(image_save_path, self.environment.get_image())
-                # data_writer.writerow([os.path.join(os.path.join('data', 'frames'),
-                #                                    f'Frame_{timestamp}_{frame_index}.jpg'),
-                #                       self.mouse_logger.previous_cursor_x, self.mouse_logger.previous_cursor_y,
-                #                       self.mouse_logger.cursor_x, self.mouse_logger.cursor_y, self.mouse_logger.l_click,
-                #                       self.mouse_logger.hit_edge()])H
                 data_writer.writerow([os.path.join(os.path.join('../data', 'frames'),
                                                    os.path.join(f'recording_{timestamp}',
                                                                 f'Frame_{timestamp}_{frame_index}.jpg')),

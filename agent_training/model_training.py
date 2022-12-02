@@ -148,7 +148,7 @@ class ModelTrainer:
                                                     validation_data=self.validation_generator, epochs=50000,
                                                     steps_per_epoch=self.train_generator.data_size // self.BATCH_SIZE,
                                                     validation_steps=self.validation_generator.data_size // self.BATCH_SIZE,
-                                                    callbacks=callbacks, workers=6)
+                                                    callbacks=callbacks, workers=8)
 
         self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
 

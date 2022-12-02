@@ -69,18 +69,12 @@ class DataGenerator(keras.utils.Sequence):
         :param index: index of which data sample to choose
         :return: training, data and its sample
         """
-        if self.data_flag == 'training':
-            # Generate indexes of the batch
-            indexes = self.indexes[index * self.batch_size: (index+1) * self.batch_size]
-            # Find list of IDs
-            list_ids_temp = [self.list_IDs[k] for k in indexes]
-            y = self.labels[indexes]
-        if self.data_flag == 'validation':
-            # Generate indexes of the batch
-            indexes = self.indexes[index * self.batch_size: (index + 1) * self.batch_size]
-            # Find list of IDs
-            list_ids_temp = [self.list_IDs[k] for k in indexes]
-            y = self.labels[indexes]
+
+        # Generate indexes of the batch
+        indexes = self.indexes[index * self.batch_size: (index+1) * self.batch_size]
+        # Find list of IDs
+        list_ids_temp = [self.list_IDs[k] for k in indexes]
+        y = self.labels[indexes]
 
         # Generate data
         x = self.__data_generation(list_ids_temp)
@@ -134,11 +128,11 @@ class DataGenerator(keras.utils.Sequence):
             if self.time_steps > 0:
                 y = [y[:, :, 0:self.features_len], y[:, :, -self.clicks_len:],
                      y[:, :, self.features_len:self.features_len+self.mouse_x_len],
-                     y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+                     y[:, :, self.features_len+self.mouse_x_len:self.features_len+self.mouse_x_len+self.mouse_y_len]]
             else:
                 y = [y[:, 0:self.features_len], y[:, -self.clicks_len:],
                      y[:, self.features_len:self.features_len+self.mouse_x_len],
-                     y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+                     y[:, self.features_len+self.mouse_x_len:self.features_len+self.mouse_x_len+self.mouse_y_len]]
 
         else:
             if self.time_steps > 0:
@@ -168,7 +162,11 @@ class DataGenerator(keras.utils.Sequence):
         for image_path in image_ids:
             if '.jpg' in image_path:
                 # print(os.path.join(self.data_path, image_path))
-                images.append(self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path.split('/')[-1]))))
+                disp = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
+                print(disp)
+                cv2.imshow('data', disp)
+                cv2.waitKey(0)
+                images.append(self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1]))))
         return images
 
     def get_image(self, img_path: str) -> np.ndarray:
@@ -178,7 +176,7 @@ class DataGenerator(keras.utils.Sequence):
         :return: array of image
         """
         image = tf.keras.preprocessing.image.load_img(img_path, color_mode="rgb", target_size=self.image_size,
-                                                      interpolation="lanczos")
+                                                       interpolation="lanczos")
         image = tf.keras.preprocessing.image.img_to_array(image, data_format=None)
         return image
 

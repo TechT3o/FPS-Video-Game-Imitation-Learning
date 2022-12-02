@@ -162,7 +162,7 @@ class ModelBuilder:
 
         # 4) set up outputs, separate outputs will allow separate losses to be applied
 
-        output_2 = Dense(self.n_clicks, activation='sigmoid', name='click_out')(dense_5)
+        output_2 = Dense(self.n_clicks, activation='softmax', name='click_out')(dense_5)
         output_3 = Dense(self.n_mouse_x, activation='softmax', name='mouse_x_out')(dense_5)  # softmax since mouse is mutually exclusive
         output_4 = Dense(self.n_mouse_y, activation='softmax', name='mouse_y_out')(dense_5)
         # output_5 = TimeDistributed(Dense(1, activation='linear'))(dense_5)
@@ -194,22 +194,22 @@ class ModelBuilder:
         """
         intermediate_model = self._build_base_model()
         input_1 = Input(shape=self.input_shape, name='main_in')
-        x = TimeDistributed(intermediate_model, name='base_model')(input_1)
+        flat = TimeDistributed(intermediate_model, name='base_model')(input_1)
 
         # x = ConvLSTM2D(filters=512, kernel_size=(3, 3), stateful=False, return_sequences=True,
         #                dropout=0.5, recurrent_dropout=0.5)(x)
 
-        flat = TimeDistributed(Flatten(), name='flatten')(x)
+        # flat = TimeDistributed(Flatten(), name='flatten')(x)
 
-        x = LSTM(256, stateful=False, return_sequences=True, dropout=0., recurrent_dropout=0., name='lstm')(flat)
+        x = LSTM(64, stateful=False, return_sequences=True, dropout=0., recurrent_dropout=0., name='lstm')(flat)
         x = TimeDistributed(Dropout(0.5))(x)
 
         # 3) add shared fc layers
-        dense_5 = x
+        dense_5 = TimeDistributed(Dense(124, activation='relu'), name='dense')(x)
 
         # 4) set up outputs, separate outputs will allow separate losses to be applied
 
-        output_2 = TimeDistributed(Dense(self.n_clicks, activation='sigmoid'), name='click_out')(dense_5)
+        output_2 = TimeDistributed(Dense(self.n_clicks, activation='softmax'), name='click_out')(dense_5)
         output_3 = TimeDistributed(Dense(self.n_mouse_x, activation='softmax'), name='mouse_x_out')(dense_5)
         # softmax since mouse is mutually exclusive
         output_4 = TimeDistributed(Dense(self.n_mouse_y, activation='softmax'), name='mouse_y_out')(dense_5)
@@ -220,7 +220,8 @@ class ModelBuilder:
 
         # 5) finish model definition
         if self.feature_chain_flag:
-            output_1 = TimeDistributed(Dense(self.n_features, activation='softmax'), name='features_out')(flat)
+            dense_chain = TimeDistributed(Dense(62, activation='relu'), name='dense_chain')(flat)
+            output_1 = TimeDistributed(Dense(self.n_features, activation='softmax'), name='features_out')(dense_chain)
             output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
                     'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
