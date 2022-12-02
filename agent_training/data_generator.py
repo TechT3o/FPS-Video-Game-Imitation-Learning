@@ -164,8 +164,9 @@ class DataGenerator(keras.utils.Sequence):
                 # print(os.path.join(self.data_path, image_path))
                 disp = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
                 print(disp)
-                cv2.imshow('data', disp)
-                cv2.waitKey(0)
+                cv2.imwrite('input_img.jpg', disp)
+                # cv2.imshow('data', disp)
+                # cv2.waitKey(0)
                 images.append(self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1]))))
         return images
 

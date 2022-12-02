@@ -92,8 +92,11 @@ def preprocess_image(image: np.ndarray, image_size: Tuple[int, int]) -> np.ndarr
     return image
 
 
-def visualize_labels(labels):
+def visualize_labels(labels, title: str=''):
     percentages = np.sum(labels, axis=0) * 100 / len(labels)
     # plt.scatter(range(len(percentages)), percentages)
     plt.bar(range(len(percentages)), percentages)
+    plt.title(title)
+    plt.xlabel('Percentage')
+    plt.ylabel('Actions')
     plt.show()
