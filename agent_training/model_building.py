@@ -3,7 +3,6 @@ from keras.models import Model
 from keras.layers import Dense, LSTM, Flatten, Input, TimeDistributed, concatenate, Dropout, Conv2D, BatchNormalization
 from agent_training.parameters import Parameters
 from keras.optimizers import Adam
-# from keras.applications.efficientnet_v2 import EfficientNetV2S
 from keras.applications import EfficientNetB0, MobileNetV3Small, ResNet50V2, NASNetMobile
 from keras.losses import CategoricalCrossentropy, BinaryCrossentropy
 from typing import Tuple
@@ -128,19 +127,15 @@ class ModelBuilder:
             # MaxPooling2D((2, 2), strides=2)(conv)
             conv = BatchNormalization()(conv)
             conv = Dropout(0.4)(conv)
-            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
+            conv = Conv2D(12*2, (3, 3), strides=2, padding='same', activation='relu')(conv)
             # MaxPooling2D((2, 2), strides=2)(conv)
             conv = BatchNormalization()(conv)
             conv = Dropout(0.4)(conv)
-            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
+            conv = Conv2D(12*2, (3, 3), strides=2, padding='same', activation='relu')(conv)
             # MaxPooling2D((2, 2), strides=2)(conv)
             conv = BatchNormalization()(conv)
             conv = Dropout(0.4)(conv)
-            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
-            # MaxPooling2D((2, 2), strides=2)(conv)
-            conv = BatchNormalization()(conv)
-            conv = Dropout(0.4)(conv)
-            conv = Conv2D(12, (3, 3), strides=2, padding='same', activation='relu')(conv)
+            conv = Conv2D(12*3, (3, 3), strides=2, padding='same', activation='relu')(conv)
             # MaxPooling2D((2, 2), strides=2)(conv)
             conv = BatchNormalization()(conv)
             conv = Dropout(0.4)(conv)
@@ -178,12 +173,12 @@ class ModelBuilder:
             output_1 = Dense(self.n_features, activation='softmax')(flat)
             output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                    'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': BinaryCrossentropy()}
+                    'click_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
         model = Model(input_1, output_all)
@@ -228,12 +223,12 @@ class ModelBuilder:
             output_1 = TimeDistributed(Dense(self.n_features, activation='softmax'), name='features_out')(flat)
             output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                    'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': BinaryCrossentropy}
+                    'click_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
         model = Model(input_1, output_all)

@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from singleton import Singleton
+from statics import visualize_labels
 
 
 class DataNormalizer(metaclass=Singleton):
@@ -32,7 +33,7 @@ class DataNormalizer(metaclass=Singleton):
         self.keep_non_edge_data()
         self.data_dataframe['Delta X'] = self.discretize_x_function(self.data_dataframe['Delta X'].values)
         self.data_dataframe['Delta Y'] = self.discretize_y_function(self.data_dataframe['Delta Y'].values)
-        self.one_hot_encoding()
+        # self.one_hot_encoding()
 
     def one_hot_encoding_experimental(self):
         """
@@ -44,7 +45,6 @@ class DataNormalizer(metaclass=Singleton):
         one_hot_x = self.one_hot_encode_x(x)
         one_hot_y = self.one_hot_encode_y(y)
         one_hot_click = pd.get_dummies(self.data_dataframe['Shot']).to_numpy()
-        print(one_hot_x, one_hot_y, one_hot_click)
 
         if self.game_features_flag:
             one_hot_features = pd.get_dummies(self.data_dataframe['Target no']).to_numpy()
@@ -60,6 +60,10 @@ class DataNormalizer(metaclass=Singleton):
         one_hot_x = pd.get_dummies(self.data_dataframe['Delta X']).to_numpy()
         one_hot_y = pd.get_dummies(self.data_dataframe['Delta Y']).to_numpy()
         one_hot_click = pd.get_dummies(self.data_dataframe['Shot']).to_numpy()
+
+        visualize_labels(one_hot_x)
+        visualize_labels(one_hot_y)
+        visualize_labels(one_hot_click)
 
         if self.game_features_flag:
             one_hot_features = pd.get_dummies(self.data_dataframe['Target no']).to_numpy()
@@ -82,14 +86,14 @@ class DataNormalizer(metaclass=Singleton):
     def one_hot_encode_x(self, array):
         one_hot = []
         for element in array:
-            one_hot.append(self.one_hot_matrix_x[np.where(self.action_space_x == element)[0]])
-        return one_hot
+            one_hot.append(self.one_hot_matrix_x[np.where(self.action_space_x == element)[0]][0])
+        return np.array(one_hot)
 
     def one_hot_encode_y(self, array):
         one_hot = []
         for element in array:
-            one_hot.append(self.one_hot_matrix_x[np.where(self.action_space_x == element)[0]])
-        return one_hot
+            one_hot.append(self.one_hot_matrix_y[np.where(self.action_space_y == element)[0]][0])
+        return np.array(one_hot)
 
     def keep_non_edge_data(self):
         """

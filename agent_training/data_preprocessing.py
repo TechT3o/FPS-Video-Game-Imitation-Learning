@@ -73,8 +73,8 @@ class DataProcessor:
             self.__y = np.hstack([feature_labels, x_labels, y_labels, click_labels])
             self.features_len = feature_labels.shape[1]
         else:
-            x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
-            # x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding_experimental()
+            # x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+            x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding_experimental()
             self.__y = np.hstack([x_labels, y_labels, click_labels])
 
         self.mouse_x_len = x_labels.shape[1]

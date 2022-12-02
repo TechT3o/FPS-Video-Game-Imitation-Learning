@@ -15,8 +15,9 @@ class Agent:
         self.ACTION_SPACE_X = np.array([-300, -200, -150, -100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
         self.ACTION_SPACE_Y = np.array([-100, -50, -25, -10, -5, -1, 0, 1, 5, 10, 25, 50, 100])
         self.has_features = self.find_feature_chain()
-        self.FPS = 24
+        self.FPS = 10
         self.buffer = []
+        self.threshold = 0.6
 
     def run_agent(self):
         # start_countdown(6)
@@ -40,10 +41,12 @@ class Agent:
                 y_predictions = mouse_y_pred[0][-1]
                 click_predictions = click_pred[0][-1]
 
-                # print(x_predictions)
+                print(x_predictions)
+                print(y_predictions)
+                print(click_predictions)
 
-                x_motion = self.ACTION_SPACE_X[x_predictions.argmax()]
-                y_motion = self.ACTION_SPACE_Y[y_predictions.argmax()]
+                x_motion = self.ACTION_SPACE_X[x_predictions.argmax()] if max(x_predictions) > self.threshold else 0
+                y_motion = self.ACTION_SPACE_Y[y_predictions.argmax()] if max(y_predictions) > self.threshold else 0
                 click = 0 if click_predictions.argmax() == 0 else 1
 
                 mouse_action(x_motion, y_motion, click, 0.01)
@@ -64,6 +67,6 @@ class Agent:
 
 
 if __name__ == "__main__":
-    agent = Agent('agent_3\\agent.h5')
+    agent = Agent('agent_5q\\agent.h5')
     start_countdown(6)
     agent.run_agent()

@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Tuple
+import matplotlib.pyplot as plt
 import win32api
 import win32con
 import json
@@ -85,3 +86,10 @@ def preprocess_image(image: np.ndarray, image_size: Tuple[int, int]) -> np.ndarr
     image = image / 255.
     image = cv2.resize(image, image_size, interpolation=cv2.INTER_LINEAR)
     return image
+
+
+def visualize_labels(labels):
+    percentages = np.sum(labels, axis=0) * 100 / len(labels)
+    # plt.scatter(range(len(percentages)), percentages)
+    plt.bar(range(len(percentages)), percentages)
+    plt.show()
