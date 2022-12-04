@@ -18,7 +18,8 @@ class Agent:
         self.has_features = self.find_feature_chain()
         self.FPS = 30
         self.buffer = []
-        self.threshold = 0.14
+        # self.threshold = 0.45
+        self.threshold = 0.15
 
     def run_agent(self):
         # start_countdown(6)
@@ -49,7 +50,8 @@ class Agent:
                 x_motion = self.ACTION_SPACE_X[x_predictions.argmax()] if max(x_predictions) > self.threshold else 0
                 y_motion = self.ACTION_SPACE_Y[y_predictions.argmax()] if max(y_predictions) > self.threshold else 0
                 # click = 0 if click_predictions.argmax() == 0 else 1
-                click = 1 if click_predictions[1] > 0.24 else 0
+                click = 1 if click_predictions[1] > 0.28 else 0
+                # click = 1 if click_predictions > 0.35 else 0
 
                 mouse_action(x_motion, y_motion, click, 0.01)
 
@@ -69,6 +71,6 @@ class Agent:
 
 
 if __name__ == "__main__":
-    agent = Agent('agent_7\\agent.h5')
+    agent = Agent('agent\\agent_8\\agent.h5')
     start_countdown(6)
     agent.run_agent()

@@ -32,9 +32,10 @@ class DataGenerator(keras.utils.Sequence):
         self.val_fraction = self.params.validation_fraction
         self.debias_flag = self.params.debias_shooting
         self.game_features_flag = self.params.feature_chain_flag
-
+        self.adjacent_labels = self.params.adjacent_label_encoding
         self.features_len = 0
-        self.data_normalizer = DataNormalizer(data_path=self.data_path, game_feature_chain=self.game_features_flag)
+        self.data_normalizer = DataNormalizer(data_path=self.data_path, game_feature_chain=self.game_features_flag,
+                                              adjacent_labels=self.adjacent_labels)
         self.list_IDs = self.data_normalizer.image_paths
         self.load_data_labels()
         print(len(self.list_IDs))
@@ -162,9 +163,10 @@ class DataGenerator(keras.utils.Sequence):
         for image_path in image_ids:
             if '.jpg' in image_path:
                 # print(os.path.join(self.data_path, image_path))
-                disp = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
-                print(disp)
-                cv2.imwrite('input_img.jpg', disp)
+                # disp = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
+                # print(disp.shape)
+                # print(disp)
+                # cv2.imwrite('input_img.jpg', disp)
                 # cv2.imshow('data', disp)
                 # cv2.waitKey(0)
                 images.append(self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1]))))
@@ -191,9 +193,11 @@ class DataGenerator(keras.utils.Sequence):
             x_labels, y_labels, click_labels, feature_labels = self.data_normalizer.one_hot_encoding()
             self.labels = np.hstack([feature_labels, x_labels, y_labels, click_labels])
             self.features_len = feature_labels.shape[1]
+            # print(x_labels, y_labels, click_labels, feature_labels)
         else:
             x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
             self.labels = np.hstack([x_labels, y_labels, click_labels])
+
 
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]

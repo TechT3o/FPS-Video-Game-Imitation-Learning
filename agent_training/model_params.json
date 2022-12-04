@@ -16,5 +16,6 @@
   "debias_shooting": 0,
   "one_shot_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\demo",
   "agent_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\agent_5",
-  "dagger_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\dagger"
+  "dagger_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\dagger",
+  "adjacent_label_encoding": 0
 }

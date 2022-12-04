@@ -92,11 +92,20 @@ def preprocess_image(image: np.ndarray, image_size: Tuple[int, int]) -> np.ndarr
     return image
 
 
-def visualize_labels(labels, title: str=''):
+def visualize_labels(labels, action_space, title: str=''):
     percentages = np.sum(labels, axis=0) * 100 / len(labels)
     # plt.scatter(range(len(percentages)), percentages)
-    plt.bar(range(len(percentages)), percentages)
+    plt.bar(range(len(percentages)), percentages, tick_label = action_space)
+    # plt.bar(action_space, percentages, width=0.8)
     plt.title(title)
-    plt.xlabel('Percentage')
-    plt.ylabel('Actions')
+    plt.ylabel('Percentage')
+    plt.xlabel('Motion')
+    plt.xticks(action_space)
     plt.show()
+
+
+def add_in_between_elements(list, frame_skip):
+
+    combined_list = np.array([item_1 + item_2 for item_1,
+                                  item_2 in zip(list[::frame_skip], list[1::frame_skip])])
+    return combined_list

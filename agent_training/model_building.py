@@ -42,6 +42,7 @@ class ModelBuilder:
         self.lstm_flag = self.params.lstm_flag
         self.feature_chain_flag = self.params.feature_chain_flag
         self.base = self.params.model_base
+        self.adjacent_labels = self.params.adjacent_label_encoding
 
         self.n_mouse_y = mouse_y
         self.n_mouse_x = mouse_x
@@ -162,7 +163,7 @@ class ModelBuilder:
 
         # 4) set up outputs, separate outputs will allow separate losses to be applied
 
-        output_2 = Dense(self.n_clicks, activation='softmax', name='click_out')(dense_5)
+        output_2 = Dense(self.n_clicks, activation='sigmoid', name='click_out')(dense_5)
         output_3 = Dense(self.n_mouse_x, activation='softmax', name='mouse_x_out')(dense_5)  # softmax since mouse is mutually exclusive
         output_4 = Dense(self.n_mouse_y, activation='softmax', name='mouse_y_out')(dense_5)
         # output_5 = TimeDistributed(Dense(1, activation='linear'))(dense_5)
@@ -173,12 +174,12 @@ class ModelBuilder:
             output_1 = Dense(self.n_features, activation='softmax')(flat)
             output_all = [output_1, output_2, output_3, output_4]
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                    'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy", 'features_out': "accuracy"}
         else:
             loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy()}
+                    'click_out': BinaryCrossentropy()}
             metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                        'click_out': "accuracy"}
         model = Model(input_1, output_all)
@@ -208,11 +209,16 @@ class ModelBuilder:
         dense_5 = TimeDistributed(Dense(124, activation='relu'), name='dense')(x)
 
         # 4) set up outputs, separate outputs will allow separate losses to be applied
-
-        output_2 = TimeDistributed(Dense(self.n_clicks, activation='softmax'), name='click_out')(dense_5)
-        output_3 = TimeDistributed(Dense(self.n_mouse_x, activation='softmax'), name='mouse_x_out')(dense_5)
-        # softmax since mouse is mutually exclusive
-        output_4 = TimeDistributed(Dense(self.n_mouse_y, activation='softmax'), name='mouse_y_out')(dense_5)
+        if self.adjacent_labels:
+            output_2 = TimeDistributed(Dense(self.n_clicks, activation='sigmoid'), name='click_out')(dense_5)
+            output_3 = TimeDistributed(Dense(self.n_mouse_x, activation='sigmoid'), name='mouse_x_out')(dense_5)
+            # softmax since mouse is mutually exclusive
+            output_4 = TimeDistributed(Dense(self.n_mouse_y, activation='sigmoid'), name='mouse_y_out')(dense_5)
+        else:
+            output_2 = TimeDistributed(Dense(self.n_clicks, activation='sigmoid'), name='click_out')(dense_5)
+            output_3 = TimeDistributed(Dense(self.n_mouse_x, activation='softmax'), name='mouse_x_out')(dense_5)
+            # softmax since mouse is mutually exclusive
+            output_4 = TimeDistributed(Dense(self.n_mouse_y, activation='softmax'), name='mouse_y_out')(dense_5)
         # output_5 = TimeDistributed(Dense(1, activation='linear'))(dense_5)
         output_all = [output_2, output_3, output_4]
         # output_all = concatenate([output_2, output_3, output_4], axis=-1)
@@ -223,15 +229,28 @@ class ModelBuilder:
             dense_chain = TimeDistributed(Dense(62, activation='relu'), name='dense_chain')(flat)
             output_1 = TimeDistributed(Dense(self.n_features, activation='softmax'), name='features_out')(dense_chain)
             output_all = [output_1, output_2, output_3, output_4]
-            loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy(), 'features_out': CategoricalCrossentropy()}
-            metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
-                       'click_out': "accuracy", 'features_out': "accuracy"}
+            if self.adjacent_labels:
+                loss = {'mouse_x_out': BinaryCrossentropy(), 'mouse_y_out': BinaryCrossentropy(),
+                        'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
+                           'click_out': "accuracy", 'features_out': "accuracy"}
+            else:
+                loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
+                        'click_out': BinaryCrossentropy(), 'features_out': CategoricalCrossentropy()}
+                metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
+                           'click_out': "accuracy", 'features_out': "accuracy"}
         else:
-            loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
-                    'click_out': CategoricalCrossentropy()}
-            metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
-                       'click_out': "accuracy"}
+            if self.adjacent_labels:
+                loss = {'mouse_x_out': BinaryCrossentropy(), 'mouse_y_out': BinaryCrossentropy(),
+                        'click_out': BinaryCrossentropy()}
+                metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
+                           'click_out': "accuracy"}
+            else:
+                loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
+                        'click_out': BinaryCrossentropy()}
+                metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
+                           'click_out': "accuracy"}
+
         model = Model(input_1, output_all)
         model.compile(optimizer=Adam(1e-3), loss=loss, metrics=metrics)
         print(model.summary())

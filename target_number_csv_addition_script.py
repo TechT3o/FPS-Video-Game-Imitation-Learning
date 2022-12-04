@@ -16,7 +16,7 @@ for image_path in data_normalizer.image_paths:
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     env_extractor.frame = img
     env_extractor.color_filtering()
-    env_extractor.find_targets(visualize=False)
+    env_extractor.find_targets(visualize=True)
     target_number_list.append(env_extractor.number_of_targets)
     env_extractor.clear_targets()
 

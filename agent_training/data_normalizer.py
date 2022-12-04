@@ -2,19 +2,21 @@ import os
 import numpy as np
 import pandas as pd
 from singleton import Singleton
-from statics import visualize_labels
+from statics import visualize_labels, add_in_between_elements
 
 
 class DataNormalizer(metaclass=Singleton):
     """
     class that reads the csv data gets the image paths and cleans and discretizes them to a form used to be classified
     """
-    def __init__(self, data_path: str = '', game_feature_chain: int = 0):
+    def __init__(self, data_path: str = '', game_feature_chain: int = 0, adjacent_labels: int = 0):
         """
         class constructor
         :param data_path: path where the csv files are stored
         """
         self.game_features_flag = game_feature_chain
+        self.adjacent_labels_encoding = adjacent_labels
+        self.frame_skip = 2
         self.csv_path = os.path.join(data_path, os.path.join('data', 'csvs'))
         self.action_space_x = np.array([-300, -200, -150, -100, -50, -25, -10,
                                         -5, -1, 0, 1, 5, 10, 50, 100, 150, 200, 300])
@@ -31,6 +33,10 @@ class DataNormalizer(metaclass=Singleton):
         self.load_csvs()
         # print(self.data_dataframe)
         self.keep_non_edge_data()
+        # print(self.data_dataframe['Delta X'].shape, self.data_dataframe['Delta X'])
+        if self.frame_skip > 1:
+            self.perform_frame_skip()
+        # print(self.data_dataframe['Delta X'].shape, self.data_dataframe['Delta X'])
         self.data_dataframe['Delta X'] = self.discretize_x_function(self.data_dataframe['Delta X'].values)
         self.data_dataframe['Delta Y'] = self.discretize_y_function(self.data_dataframe['Delta Y'].values)
         # self.one_hot_encoding()
@@ -59,17 +65,36 @@ class DataNormalizer(metaclass=Singleton):
         """
         one_hot_x = pd.get_dummies(self.data_dataframe['Delta X']).to_numpy()
         one_hot_y = pd.get_dummies(self.data_dataframe['Delta Y']).to_numpy()
-        one_hot_click = pd.get_dummies(self.data_dataframe['Shot']).to_numpy()
+        one_hot_click = np.expand_dims(self.data_dataframe['Shot'].to_numpy(), axis=1)
 
-        visualize_labels(one_hot_x)
-        visualize_labels(one_hot_y)
-        visualize_labels(one_hot_click)
+        if self.adjacent_labels_encoding:
+            one_hot_x = self.encode_adjacent_values(one_hot_x)
+            one_hot_y = self.encode_adjacent_values(one_hot_y)
+
+        # visualize_labels(one_hot_x, self.action_space_x, title= 'X Motions Histogram')
+        # visualize_labels(one_hot_y, self.action_space_y, title= 'Y Motions Histogram')
+        # visualize_labels(one_hot_click, ['No shoot', 'shoot'], title= 'Shooting Histogram')
 
         if self.game_features_flag:
             one_hot_features = pd.get_dummies(self.data_dataframe['Target no']).to_numpy()
             return one_hot_x, one_hot_y, one_hot_click, one_hot_features
 
         return one_hot_x, one_hot_y, one_hot_click
+
+    def encode_adjacent_values(self, array):
+        for index, element in enumerate(array):
+            one_index = np.argmax(element)
+            if one_index == 0:
+                element[one_index+1] = 1
+                array[index] = element
+            elif one_index == len(element) -1:
+                element[one_index - 1] = 1
+                array[index] = element
+            else:
+                element[one_index - 1] = 1
+                element[one_index + 1] = 1
+                array[index] = element
+        return array
 
     def load_csvs(self):
         """
@@ -104,6 +129,16 @@ class DataNormalizer(metaclass=Singleton):
         :return: None
         """
         self.data_dataframe = self.data_dataframe[self.data_dataframe['Hit Edge Flag'] == False]
+
+    def perform_frame_skip(self):
+
+        skipped_dataframe = pd.DataFrame()
+        skipped_dataframe['Delta X'] = add_in_between_elements(self.data_dataframe['Delta X'], self.frame_skip)
+        skipped_dataframe['Delta Y'] = add_in_between_elements(self.data_dataframe['Delta Y'], self.frame_skip)
+        skipped_dataframe['Image Path'] = self.data_dataframe['Image Path'].to_numpy().copy()[1::self.frame_skip]
+        skipped_dataframe['Shot'] = self.data_dataframe['Shot'].to_numpy().copy()[1::self.frame_skip]
+        skipped_dataframe['Target no'] = self.data_dataframe['Target no'].to_numpy().copy()[1::self.frame_skip]
+        self.data_dataframe = skipped_dataframe
 
     @property
     def discretized_x(self):

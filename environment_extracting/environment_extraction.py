@@ -90,20 +90,22 @@ class EnvironmentExtractor:
                 cv2.circle(self.frame, (x, y), radius=1, color=(0, 0, 255), thickness=2)
             self.target_centers.append((x, y))
         if visualize:
-            cv2.imshow('contoured img', cv2.resize(self.frame, (240*4, 135*4)))
+            cv2.imshow('contoured img', cv2.resize(self.frame, (240*6, 135*6)))
             cv2.waitKey(1)
 
     def clear_targets(self):
         self.target_centers = []
 
     def test_extractor(self):
+
         while True:
+
             self.frame = self.get_image()
             self.color_filtering()
             self.find_targets(visualize=True)
             print(self.number_of_targets)
             self.clear_targets()
-        # cv2.destroyAllWindows()
+
 
     @property
     def number_of_targets(self):

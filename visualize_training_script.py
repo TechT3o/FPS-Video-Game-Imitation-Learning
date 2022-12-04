@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-path = "agent_8\\training.log"
+path = "agent/agent_10\\training.log"
 k = 1
 
 data = pd.read_csv(path)

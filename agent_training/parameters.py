@@ -84,3 +84,7 @@ class Parameters(metaclass=Singleton):
     @property
     def dagger_path(self):
         return self.parameter_dict['dagger_path']
+
+    @property
+    def adjacent_label_encoding(self):
+        return self.parameter_dict['adjacent_label_encoding']
