@@ -2,7 +2,6 @@ import cv2
 from sklearn.model_selection import train_test_split
 from agent_training.data_normalizer import DataNormalizer
 from agent_training.parameters import Parameters
-from statics import preprocess_image
 import tensorflow as tf
 from typing import Tuple, List
 import numpy as np
@@ -48,7 +47,7 @@ class DataProcessor:
 
         self.features_len = 0
         self.__label_indices = dict()
-        self.data_normalizer = DataNormalizer(data_path=self.data_path, transfer_flag= transfer_flag)
+        self.data_normalizer = DataNormalizer(data_path=self.data_path, transfer_flag=transfer_flag)
         self.image_paths = self.data_normalizer.image_paths
         self.prepare_data()
 
@@ -135,7 +134,8 @@ class DataProcessor:
         x = []
         for image_path in self.image_paths:
             if '.jpg' in image_path:
-                processed_image = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
+                processed_image = self.preprocess_image(cv2.imread(os.path.join(self.data_path,
+                                                                                image_path.split('/')[-1])))
                 x.append(processed_image)
         self.__X = np.array(x)
 
@@ -167,11 +167,11 @@ class DataProcessor:
                                   self.__y_train[:, :, self.features_len:self.features_len+self.mouse_x_len],
                                   self.__y_train[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
                 self.__y_test = [self.__y_test[:, :, 0:self.features_len], self.__y_test[:, :, -self.clicks_len:],
-                                  self.__y_test[:, :, self.features_len:self.features_len+self.mouse_x_len],
-                                  self.__y_test[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+                                 self.__y_test[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                                 self.__y_test[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
                 self.__y_val = [self.__y_val[:, :, 0:self.features_len], self.__y_val[:, :, -self.clicks_len:],
-                                  self.__y_val[:, :, self.features_len:self.features_len+self.mouse_x_len],
-                                  self.__y_val[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+                                self.__y_val[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                                self.__y_val[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
             else:
                 self.__y_train = [self.__y_train[:, 0:self.features_len], self.__y_train[:, -self.clicks_len:],
                                   self.__y_train[:, self.features_len:self.features_len+self.mouse_x_len],
@@ -182,7 +182,6 @@ class DataProcessor:
                 self.__y_val = [self.__y_val[:, 0:self.features_len], self.__y_val[:, -self.clicks_len:],
                                 self.__y_val[:, self.features_len:self.features_len+self.mouse_x_len],
                                 self.__y_val[:, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
-
 
         else:
             if self.time_steps > 0:

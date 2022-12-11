@@ -5,7 +5,6 @@ from keras.optimizers import Adam
 from agent_training.parameters import Parameters
 from agent_training.data_preprocessing import DataProcessor
 import os
-import shutil
 
 
 class TransferLearner:
@@ -28,21 +27,33 @@ class TransferLearner:
         self.remove_feature_chain()
         print(self.agent.summary())
 
-    def remove_feature_chain(self):
+    def remove_feature_chain(self) -> None:
+        """
+        Finds if feature chain exists and rebuilds the model without it
+        :return: None
+        """
         for layer in self.agent.layers:
             if layer.name == 'features_out':
                 intermediate_model = Model(self.agent.input, self.agent.layers[4].output)
                 outputs = [self.agent.layers[6].output, self.agent.layers[7].output, self.agent.layers[8].output]
                 self.agent = Model(intermediate_model.input, outputs)
 
-    def compile_agent(self):
+    def compile_agent(self) -> None:
+        """
+        Compiles the model
+        :return: None
+        """
         loss = {'mouse_x_out': CategoricalCrossentropy(), 'mouse_y_out': CategoricalCrossentropy(),
                 'click_out': BinaryCrossentropy()}
         metrics = {'mouse_x_out': "accuracy", 'mouse_y_out': "accuracy",
                    'click_out': "accuracy"}
         self.agent.compile(optimizer=Adam(1e-5), loss=loss, metrics=metrics)
 
-    def fine_tune(self):
+    def fine_tune(self) -> None:
+        """
+        Fine-tunes the model with the new data
+        :return:
+        """
         print("Loading data")
         dataset = DataProcessor(self.data_path, transfer_flag=True)
         batch_size = 4
@@ -59,7 +70,7 @@ class TransferLearner:
                                               steps_per_epoch=dataset.x_train.shape[0] // batch_size,
                                               validation_steps=dataset.x_val.shape[0] // batch_size,
                                               verbose=1)
-        return "new_agent.h5"
+        return
 
 
 if __name__ == "__main__":

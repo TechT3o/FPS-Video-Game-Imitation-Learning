@@ -5,7 +5,6 @@ from agent_training.data_preprocessing import DataNormalizer
 from agent_training.parameters import Parameters
 import cv2
 import os
-import tensorflow as tf
 from typing import List, Tuple
 
 
@@ -90,7 +89,7 @@ class DataGenerator(keras.utils.Sequence):
         :return: None
         """
         self.indexes = np.arange(len(self.list_IDs))
-        if self.shuffle == True:
+        if self.shuffle is True:
             np.random.shuffle(self.indexes)
 
     def reshape_ids_and_labels(self) -> None:
@@ -101,20 +100,20 @@ class DataGenerator(keras.utils.Sequence):
 
         if self.time_steps != 0:
 
-            self.list_IDs = self.list_IDs[:self.list_IDs.shape[0]
-                                - (self.list_IDs.shape[0] % self.time_steps)].reshape((-1, self.time_steps))
+            self.list_IDs = self.list_IDs[:self.list_IDs.shape[0] - (self.list_IDs.shape[0]
+                                                                     % self.time_steps)].reshape((-1, self.time_steps))
             self.labels = self.labels[: self.labels.shape[0] - (self.labels.shape[0]
-                                                       % self.time_steps)].reshape((-1, self.time_steps,
-                                                                                    self.labels.shape[-1]))
+                                                                % self.time_steps)].reshape((-1, self.time_steps,
+                                                                                             self.labels.shape[-1]))
 
-    def __data_generation(self, list_IDs_temp: List) -> np.ndarray:
+    def __data_generation(self, list_ids_temp: List) -> np.ndarray:
         """
         loads a data sample
-        :param list_IDs_temp: list of image-paths of which images to load
+        :param list_ids_temp: list of image-paths of which images to load
         :return: numpy array of data sample
         """
         x = []
-        for ID in list_IDs_temp:
+        for ID in list_ids_temp:
             x.append(self.load_images(ID))
 
         return np.array(x)
@@ -162,26 +161,9 @@ class DataGenerator(keras.utils.Sequence):
         images = []
         for image_path in image_ids:
             if '.jpg' in image_path:
-                # print(os.path.join(self.data_path, image_path))
-                # disp = self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1])))
-                # print(disp.shape)
-                # print(disp)
-                # cv2.imwrite('input_img.jpg', disp)
-                # cv2.imshow('data', disp)
-                # cv2.waitKey(0)
-                images.append(self.preprocess_image(cv2.imread(os.path.join(self.data_path, image_path.split('/')[-1]))))
+                images.append(self.preprocess_image(cv2.imread(os.path.join(self.data_path,
+                                                                            image_path.split('/')[-1]))))
         return images
-
-    def get_image(self, img_path: str) -> np.ndarray:
-        """
-        Loads image to an array using keras
-        :param img_path: string path to the image to be loaded
-        :return: array of image
-        """
-        image = tf.keras.preprocessing.image.load_img(img_path, color_mode="rgb", target_size=self.image_size,
-                                                       interpolation="lanczos")
-        image = tf.keras.preprocessing.image.img_to_array(image, data_format=None)
-        return image
 
     def load_data_labels(self) -> None:
         """
@@ -197,7 +179,6 @@ class DataGenerator(keras.utils.Sequence):
         else:
             x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
             self.labels = np.hstack([x_labels, y_labels, click_labels])
-
 
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]

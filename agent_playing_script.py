@@ -26,8 +26,8 @@ class Agent:
         self.has_features = self.find_feature_chain()
         self.FPS = 15
         self.buffer = []
-        self.action_threshold = 0.12
-        self.shooting_threshold = 0.25
+        self.action_threshold = 0.15
+        self.shooting_threshold = 0.2
 
     def run_agent(self):
         while True:
