@@ -68,3 +68,23 @@ class Parameters(metaclass=Singleton):
     @property
     def batch_size(self):
         return self.parameter_dict['batch_size']
+
+    @property
+    def debias_shooting(self):
+        return self.parameter_dict['debias_shooting']
+
+    @property
+    def one_shot_path(self):
+        return self.parameter_dict['one_shot_path']
+
+    @property
+    def agent_path(self):
+        return self.parameter_dict['agent_path']
+
+    @property
+    def dagger_path(self):
+        return self.parameter_dict['dagger_path']
+
+    @property
+    def adjacent_label_encoding(self):
+        return self.parameter_dict['adjacent_label_encoding']

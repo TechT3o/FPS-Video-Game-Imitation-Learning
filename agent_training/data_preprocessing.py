@@ -2,7 +2,6 @@ import cv2
 from sklearn.model_selection import train_test_split
 from agent_training.data_normalizer import DataNormalizer
 from agent_training.parameters import Parameters
-from statics import preprocess_image
 import tensorflow as tf
 from typing import Tuple, List
 import numpy as np
@@ -32,23 +31,25 @@ class DataProcessor:
     __X_test: np.ndarray
     __y_test: np.ndarray or List
 
-    def __init__(self):
+    def __init__(self, data_path=None, transfer_flag: bool = False):
         """
         class constructor
         """
         self.params = Parameters()
-        self.data_path = self.params.data_path
+        self.data_path = self.params.data_path if data_path is None else data_path
         self.color_channels = self.params.channel_size
         self.image_size = (self.params.image_size_x, self.params.image_size_y)
         self.time_steps = self.params.time_steps
         self.val_fraction = self.params.validation_fraction
         self.test_fraction = self.params.test_fraction
         self.batch_size = self.params.batch_size
+        self.game_features_flag = self.params.feature_chain_flag
 
+        self.features_len = 0
         self.__label_indices = dict()
-        self.data_normalizer = DataNormalizer(data_path=self.data_path)
+        self.data_normalizer = DataNormalizer(data_path=self.data_path, transfer_flag=transfer_flag)
         self.image_paths = self.data_normalizer.image_paths
-        # self.prepare_data()
+        self.prepare_data()
 
     def prepare_data(self):
         """
@@ -66,11 +67,18 @@ class DataProcessor:
         loads labels from DataNormalizer object
         :return: None
         """
-        x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+        if self.game_features_flag:
+            x_labels, y_labels, click_labels, feature_labels = self.data_normalizer.one_hot_encoding()
+            self.__y = np.hstack([feature_labels, x_labels, y_labels, click_labels])
+            self.features_len = feature_labels.shape[1]
+        else:
+            x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+            # x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding_experimental()
+            self.__y = np.hstack([x_labels, y_labels, click_labels])
+
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]
         self.clicks_len = click_labels.shape[1]
-        self.__y = np.hstack([x_labels, y_labels, click_labels])
 
     def get_image(self, img_path) -> np.ndarray:
         """
@@ -126,7 +134,8 @@ class DataProcessor:
         x = []
         for image_path in self.image_paths:
             if '.jpg' in image_path:
-                processed_image = self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path.split('/')[-1])))
+                processed_image = self.preprocess_image(cv2.imread(os.path.join(self.data_path,
+                                                                                image_path.split('/')[-1])))
                 x.append(processed_image)
         self.__X = np.array(x)
 
@@ -152,20 +161,43 @@ class DataProcessor:
         Separates the split labels in the list form that the model requires
         :return: None
         """
-        if self.time_steps > 0:
-            self.__y_train = [self.__y_train[:, :, -self.clicks_len:], self.__y_train[:, :, 0:self.mouse_x_len],
-                              self.__y_train[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
-            self.__y_test = [self.__y_test[:, :, -self.clicks_len:], self.__y_test[:, :, 0:self.mouse_x_len],
-                             self.__y_test[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
-            self.__y_val = [self.__y_val[:, :, -self.clicks_len:], self.__y_val[:, :, 0:self.mouse_x_len],
-                            self.__y_val[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+        if self.game_features_flag:
+            if self.time_steps > 0:
+                self.__y_train = [self.__y_train[:, :, 0:self.features_len], self.__y_train[:, :, -self.clicks_len:],
+                                  self.__y_train[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                                  self.__y_train[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+                self.__y_test = [self.__y_test[:, :, 0:self.features_len], self.__y_test[:, :, -self.clicks_len:],
+                                 self.__y_test[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                                 self.__y_test[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+                self.__y_val = [self.__y_val[:, :, 0:self.features_len], self.__y_val[:, :, -self.clicks_len:],
+                                self.__y_val[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                                self.__y_val[:, :, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+            else:
+                self.__y_train = [self.__y_train[:, 0:self.features_len], self.__y_train[:, -self.clicks_len:],
+                                  self.__y_train[:, self.features_len:self.features_len+self.mouse_x_len],
+                                  self.__y_train[:, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+                self.__y_test = [self.__y_test[:, 0:self.features_len], self.__y_test[:, -self.clicks_len:],
+                                 self.__y_test[:, self.features_len:self.features_len+self.mouse_x_len],
+                                 self.__y_test[:, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+                self.__y_val = [self.__y_val[:, 0:self.features_len], self.__y_val[:, -self.clicks_len:],
+                                self.__y_val[:, self.features_len:self.features_len+self.mouse_x_len],
+                                self.__y_val[:, self.mouse_x_len:self.mouse_x_len + self.mouse_y_len]]
+
         else:
-            self.__y_train = [self.__y_train[:, -self.clicks_len:], self.__y_train[:, 0:self.mouse_x_len],
-                              self.__y_train[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
-            self.__y_test = [self.__y_test[:, -self.clicks_len:], self.__y_test[:, 0:self.mouse_x_len],
-                             self.__y_test[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
-            self.__y_val = [self.__y_val[:, -self.clicks_len:], self.__y_val[:, 0:self.mouse_x_len],
-                            self.__y_val[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            if self.time_steps > 0:
+                self.__y_train = [self.__y_train[:, :, -self.clicks_len:], self.__y_train[:, :, 0:self.mouse_x_len],
+                                  self.__y_train[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+                self.__y_test = [self.__y_test[:, :, -self.clicks_len:], self.__y_test[:, :, 0:self.mouse_x_len],
+                                 self.__y_test[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+                self.__y_val = [self.__y_val[:, :, -self.clicks_len:], self.__y_val[:, :, 0:self.mouse_x_len],
+                                self.__y_val[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            else:
+                self.__y_train = [self.__y_train[:, -self.clicks_len:], self.__y_train[:, 0:self.mouse_x_len],
+                                  self.__y_train[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+                self.__y_test = [self.__y_test[:, -self.clicks_len:], self.__y_test[:, 0:self.mouse_x_len],
+                                 self.__y_test[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+                self.__y_val = [self.__y_val[:, -self.clicks_len:], self.__y_val[:, 0:self.mouse_x_len],
+                                self.__y_val[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
 
     @property
     def x_train(self):

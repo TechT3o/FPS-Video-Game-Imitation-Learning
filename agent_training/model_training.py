@@ -37,7 +37,6 @@ class ModelTrainer:
         self.lstm_flag = self.params.lstm_flag
         self.feature_chain_flag = self.params.feature_chain_flag
         self.base = self.params.model_base
-        self.augmentation = self.params.augmentation
         self.loading_flag = self.params.loading_flag
         self.BATCH_SIZE = self.params.batch_size
 
@@ -48,48 +47,16 @@ class ModelTrainer:
             self.train_generator = DataGenerator(data_flag='training')
             self.validation_generator = DataGenerator(data_flag='validation')
             self.model_builder = ModelBuilder(self.train_generator.mouse_x_len, self.train_generator.mouse_y_len,
-                                              self.train_generator.clicks_len)
+                                              self.train_generator.clicks_len, self.train_generator.features_len)
+            print(self.train_generator.features_len, self.validation_generator.features_len)
         else:
             self.dataset = DataProcessor()
             self.model_builder = ModelBuilder(self.dataset.mouse_x_len, self.dataset.mouse_y_len,
-                                              self.dataset.clicks_len)
+                                              self.dataset.clicks_len, self.dataset.features_len)
 
         self.__model = self.model_builder.model
-        # self.BATCH_SIZE = self.dataset.x_val.shape[0] // 100 if self.dataset.x_val.shape[0] >= 100 else \
-        #     self.dataset.x_val.shape[0]
         self.__metrics = {}
         self._train_and_evaluate_model()
-
-    def image_generator(self) -> tf.keras.preprocessing.image.ImageDataGenerator:
-        """
-        Keras generator that takes the datasetX augments it and then inputs it in the model training
-        :return: keras image data generator object
-        """
-        return tf.keras.preprocessing.image.ImageDataGenerator(
-            featurewise_center=False,
-            samplewise_center=False,
-            featurewise_std_normalization=False,
-            samplewise_std_normalization=False,
-            zca_whitening=False,
-            zca_epsilon=1e-06,
-            rotation_range=0,
-            width_shift_range=0.0,
-            height_shift_range=0.0,
-            brightness_range=(-0.1, 0.1),
-            shear_range=0.0,
-            zoom_range=0.0,
-            channel_shift_range=0.0,
-            fill_mode='nearest',
-            cval=0.0,
-            horizontal_flip=False,
-            vertical_flip=False,
-            rescale=None,
-            preprocessing_function=None,
-            data_format=None,
-            validation_split=0.0,
-            interpolation_order=1,
-            dtype=None
-        )
 
     def _train_model(self) -> None:
         """
@@ -105,31 +72,15 @@ class ModelTrainer:
             tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=40, verbose=1,
                                              mode="min")]
 
-        if self.augmentation:
-            data_generator = self.image_generator()
-            self.__history = self.__model.fit(x=data_generator.flow(self.dataset.x_train, self.dataset.y_train,
-                                                                    batch_size=self.BATCH_SIZE),
-                                              epochs=50000, callbacks=callbacks,
-                                              validation_data=data_generator.flow(self.dataset.x_val,
-                                                                                  self.dataset.y_val,
-                                                                                  batch_size=self.BATCH_SIZE),
-                                              steps_per_epoch=self.dataset.x_train.shape[
-                                                                  0] // self.BATCH_SIZE,
-                                              validation_steps=self.dataset.x_val.shape[
-                                                                   0] // self.BATCH_SIZE,
-                                              verbose=1)
-            self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
-        else:
-            # print(self.dataset.y_train.shape, self.dataset.y_val.shape)
-            self.__history = self.__model.fit(x=x_train, y=self.dataset.y_train, batch_size=self.BATCH_SIZE,
-                                              epochs=50000, callbacks=callbacks,
-                                              validation_data=(x_val, self.dataset.y_val),
-                                              steps_per_epoch=self.dataset.x_train.shape[
-                                                                  0] // self.BATCH_SIZE,
-                                              validation_steps=self.dataset.x_val.shape[
-                                                                   0] // self.BATCH_SIZE,
-                                              verbose=1)
-            self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
+        self.__history = self.__model.fit(x=x_train, y=self.dataset.y_train, batch_size=self.BATCH_SIZE,
+                                          epochs=50000, callbacks=callbacks,
+                                          validation_data=(x_val, self.dataset.y_val),
+                                          steps_per_epoch=self.dataset.x_train.shape[
+                                                              0] // self.BATCH_SIZE,
+                                          validation_steps=self.dataset.x_val.shape[
+                                                               0] // self.BATCH_SIZE,
+                                          verbose=1)
+        self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
 
     def _train_model_gen(self) -> None:
         """
@@ -140,14 +91,14 @@ class ModelTrainer:
         callbacks = [
             tf.keras.callbacks.ModelCheckpoint(self.save_path + "\\model.h5", save_best_only=True, verbose=1),
             tf.keras.callbacks.CSVLogger(self.save_path + '\\training.log'),
-            tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=40, verbose=1,
+            tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=20, verbose=1,
                                              mode="min")]
 
         self.__history = self.__model.fit_generator(generator=self.train_generator,
                                                     validation_data=self.validation_generator, epochs=50000,
                                                     steps_per_epoch=self.train_generator.data_size // self.BATCH_SIZE,
                                                     validation_steps=self.validation_generator.data_size // self.BATCH_SIZE,
-                                                    callbacks=callbacks, workers=6)
+                                                    callbacks=callbacks, workers=8)
 
         self.__model = tf.keras.models.load_model(self.save_path + "\\model.h5")
 
@@ -176,30 +127,21 @@ class ModelTrainer:
         mouse_x_test = mouse_x_test.reshape((mouse_x_test.shape[0] * mouse_x_test.shape[1], mouse_x_test.shape[2]))
         click_test = click_test.reshape((click_test.shape[0] * click_test.shape[1], click_test.shape[2]))
 
-        click_predictions = click_predictions.reshape((click_predictions.shape[0] * click_predictions.shape[1], click_predictions.shape[2]))
+        click_predictions = click_predictions.reshape((click_predictions.shape[0] * click_predictions.shape[1],
+                                                       click_predictions.shape[2]))
         x_predictions = x_predictions.reshape((x_predictions.shape[0] * x_predictions.shape[1], x_predictions.shape[2]))
         y_predictions = y_predictions.reshape((y_predictions.shape[0] * y_predictions.shape[1], y_predictions.shape[2]))
 
-        # print(mouse_x_test.shape, x_predictions.shape)
-        # print(mouse_y_test.shape, y_predictions.shape)
-        # print(click_test.shape, click_predictions.shape)
-
         self.__metrics["mouse_x_f1_score"] = f1_score(mouse_x_test, x_predictions, average=None)
-        # self.__metrics["mouse_x_precision"] = precision_score(mouse_x_test, x_predictions, average=None)
         self.__metrics["mouse_x_recall"] = recall_score(mouse_x_test, x_predictions, average=None)
-        # self.__metrics["mouse_x_roc_auc"] = roc_auc_score(mouse_x_test, x_predictions, average=None)
         self.__metrics["mouse_x_accuracy"] = accuracy_score(mouse_x_test, x_predictions)
 
         self.__metrics["mouse_y_f1_score"] = f1_score(mouse_y_test, y_predictions, average=None)
-        # self.__metrics["mouse_y_precision"] = precision_score(mouse_y_test, y_predictions, average=None)
         self.__metrics["mouse_y_recall"] = recall_score(mouse_y_test, y_predictions, average=None)
-        # self.__metrics["mouse_y_roc_auc"] = roc_auc_score(mouse_y_test, y_predictions, average=None)
         self.__metrics["mouse_y_accuracy"] = accuracy_score(mouse_y_test, y_predictions)
 
         self.__metrics["click_f1_score"] = f1_score(click_test, click_predictions, average=None)
-        # self.__metrics["click_precision"] = precision_score(click_test, click_predictions, average=None)
         self.__metrics["click_recall"] = recall_score(click_test, click_predictions, average=None)
-        # self.__metrics["click_roc_auc"] = roc_auc_score(click_test, click_predictions, average=None)
         self.__metrics["click_accuracy"] = accuracy_score(click_test, click_predictions)
 
         print(self.__metrics)

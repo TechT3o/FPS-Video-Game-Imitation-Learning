@@ -1,3 +1,7 @@
+"""
+Gui that shows you your screen and has sliders to change the HSV action_threshold values to do color selection. Useful website
+for selecting the color is https://programmingdesignsystems.com/color/color-models-and-color-spaces/index.html
+"""
 import cv2
 import numpy as np
 import mss
@@ -15,8 +19,8 @@ def nothing() -> None:
 img = np.zeros((300, 512, 3), np.uint8)
 cv2.namedWindow('image')
 # create trackbars for color change
-cv2.createTrackbar('min_val', 'image', 0, 1000, nothing)
-cv2.createTrackbar('max_val', 'image', 0, 1000, nothing)
+
+# hsv for 3daimtrainer is 9, 81, 255 and 28, 154, 255
 
 # for Aimlabs blue pick (82,130,10)
 cv2.createTrackbar('hue_l', 'image', 0, 179, nothing)
@@ -43,9 +47,7 @@ while 1:
     if k == ord("c"):
         break
 
-    # get current positions of four trackbars
-    min_val = cv2.getTrackbarPos('min_val', 'image')
-    max_val = cv2.getTrackbarPos('max_val', 'image')
+    # get current positions of trackbars
     hue_l = cv2.getTrackbarPos('hue_l', 'image')
     sat_l = cv2.getTrackbarPos('sat_l', 'image')
     bri_l = cv2.getTrackbarPos('bri_l', 'image')

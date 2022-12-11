@@ -5,7 +5,6 @@ from agent_training.data_preprocessing import DataNormalizer
 from agent_training.parameters import Parameters
 import cv2
 import os
-import tensorflow as tf
 from typing import List, Tuple
 
 
@@ -30,22 +29,33 @@ class DataGenerator(keras.utils.Sequence):
         self.image_size = (self.params.image_size_x, self.params.image_size_y)
         self.time_steps = self.params.time_steps
         self.val_fraction = self.params.validation_fraction
-
-        self.data_normalizer = DataNormalizer(data_path=self.data_path)
+        self.debias_flag = self.params.debias_shooting
+        self.game_features_flag = self.params.feature_chain_flag
+        self.adjacent_labels = self.params.adjacent_label_encoding
+        self.features_len = 0
+        self.data_normalizer = DataNormalizer(data_path=self.data_path, game_feature_chain=self.game_features_flag,
+                                              adjacent_labels=self.adjacent_labels)
         self.list_IDs = self.data_normalizer.image_paths
         self.load_data_labels()
+        print(len(self.list_IDs))
 
-        if self.data_path == "validation":
+        if self.data_flag == "validation":
             validation_size = int(len(self.list_IDs) * self.val_fraction)
+            print(validation_size)
             self.list_IDs = self.list_IDs[-validation_size:]
             self.labels = self.labels[-validation_size:]
 
-        if self.data_path == "training":
+        if self.data_flag == "training":
             training_size = int(len(self.list_IDs) * (1 - self.val_fraction))
+            print(training_size)
             self.list_IDs = self.list_IDs[:training_size]
             self.labels = self.labels[:training_size]
 
         self.reshape_ids_and_labels()
+
+        if self.debias_flag:
+            self.debias_shooting()
+
         self.data_size = len(self.list_IDs)
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -59,18 +69,12 @@ class DataGenerator(keras.utils.Sequence):
         :param index: index of which data sample to choose
         :return: training, data and its sample
         """
-        if self.data_flag == 'training':
-            # Generate indexes of the batch
-            indexes = self.indexes[index * self.batch_size: (index+1) * self.batch_size]
-            # Find list of IDs
-            list_ids_temp = [self.list_IDs[k] for k in indexes]
-            y = self.labels[indexes]
-        if self.data_flag == 'validation':
-            # Generate indexes of the batch
-            indexes = self.indexes[index * self.batch_size: (index + 1) * self.batch_size]
-            # Find list of IDs
-            list_ids_temp = [self.list_IDs[k] for k in indexes]
-            y = self.labels[indexes]
+
+        # Generate indexes of the batch
+        indexes = self.indexes[index * self.batch_size: (index+1) * self.batch_size]
+        # Find list of IDs
+        list_ids_temp = [self.list_IDs[k] for k in indexes]
+        y = self.labels[indexes]
 
         # Generate data
         x = self.__data_generation(list_ids_temp)
@@ -85,7 +89,7 @@ class DataGenerator(keras.utils.Sequence):
         :return: None
         """
         self.indexes = np.arange(len(self.list_IDs))
-        if self.shuffle == True:
+        if self.shuffle is True:
             np.random.shuffle(self.indexes)
 
     def reshape_ids_and_labels(self) -> None:
@@ -96,20 +100,20 @@ class DataGenerator(keras.utils.Sequence):
 
         if self.time_steps != 0:
 
-            self.list_IDs = self.list_IDs[:self.list_IDs.shape[0]
-                                - (self.list_IDs.shape[0] % self.time_steps)].reshape((-1, self.time_steps))
+            self.list_IDs = self.list_IDs[:self.list_IDs.shape[0] - (self.list_IDs.shape[0]
+                                                                     % self.time_steps)].reshape((-1, self.time_steps))
             self.labels = self.labels[: self.labels.shape[0] - (self.labels.shape[0]
-                                                       % self.time_steps)].reshape((-1, self.time_steps,
-                                                                                    self.labels.shape[-1]))
+                                                                % self.time_steps)].reshape((-1, self.time_steps,
+                                                                                             self.labels.shape[-1]))
 
-    def __data_generation(self, list_IDs_temp: List) -> np.ndarray:
+    def __data_generation(self, list_ids_temp: List) -> np.ndarray:
         """
         loads a data sample
-        :param list_IDs_temp: list of image-paths of which images to load
+        :param list_ids_temp: list of image-paths of which images to load
         :return: numpy array of data sample
         """
         x = []
-        for ID in list_IDs_temp:
+        for ID in list_ids_temp:
             x.append(self.load_images(ID))
 
         return np.array(x)
@@ -119,12 +123,24 @@ class DataGenerator(keras.utils.Sequence):
         Separates the split labels in the list form that the model requires
         :return: None
         """
-        if self.time_steps > 0:
-            y = [y[:, :, -self.clicks_len:], y[:, :, 0:self.mouse_x_len],
-                 y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+
+        if self.game_features_flag:
+            if self.time_steps > 0:
+                y = [y[:, :, 0:self.features_len], y[:, :, -self.clicks_len:],
+                     y[:, :, self.features_len:self.features_len+self.mouse_x_len],
+                     y[:, :, self.features_len+self.mouse_x_len:self.features_len+self.mouse_x_len+self.mouse_y_len]]
+            else:
+                y = [y[:, 0:self.features_len], y[:, -self.clicks_len:],
+                     y[:, self.features_len:self.features_len+self.mouse_x_len],
+                     y[:, self.features_len+self.mouse_x_len:self.features_len+self.mouse_x_len+self.mouse_y_len]]
+
         else:
-            y = [y[:, -self.clicks_len:], y[:, 0:self.mouse_x_len],
-                 y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            if self.time_steps > 0:
+                y = [y[:, :, -self.clicks_len:], y[:, :, 0:self.mouse_x_len],
+                     y[:, :, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
+            else:
+                y = [y[:, -self.clicks_len:], y[:, 0:self.mouse_x_len],
+                     y[:, self.mouse_x_len:self.mouse_x_len+self.mouse_y_len]]
         return y
 
     def preprocess_image(self, image: np.ndarray) -> np.ndarray:
@@ -145,31 +161,50 @@ class DataGenerator(keras.utils.Sequence):
         images = []
         for image_path in image_ids:
             if '.jpg' in image_path:
-                # print(os.path.join(self.data_path, image_path))
-                images.append(self.preprocess_image(self.get_image(os.path.join(self.data_path, image_path.split('/')[-1]))))
+                images.append(self.preprocess_image(cv2.imread(os.path.join(self.data_path,
+                                                                            image_path.split('/')[-1]))))
         return images
-
-    def get_image(self, img_path: str) -> np.ndarray:
-        """
-        Loads image to an array using keras
-        :param img_path: string path to the image to be loaded
-        :return: array of image
-        """
-        image = tf.keras.preprocessing.image.load_img(img_path, color_mode="rgb", target_size=self.image_size,
-                                                      interpolation="lanczos")
-        image = tf.keras.preprocessing.image.img_to_array(image, data_format=None)
-        return image
 
     def load_data_labels(self) -> None:
         """
         loads labels from DataNormalizer object
         :return: None
         """
-        x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+
+        if self.game_features_flag:
+            x_labels, y_labels, click_labels, feature_labels = self.data_normalizer.one_hot_encoding()
+            self.labels = np.hstack([feature_labels, x_labels, y_labels, click_labels])
+            self.features_len = feature_labels.shape[1]
+            # print(x_labels, y_labels, click_labels, feature_labels)
+        else:
+            x_labels, y_labels, click_labels = self.data_normalizer.one_hot_encoding()
+            self.labels = np.hstack([x_labels, y_labels, click_labels])
+
         self.mouse_x_len = x_labels.shape[1]
         self.mouse_y_len = y_labels.shape[1]
         self.clicks_len = click_labels.shape[1]
-        self.labels = np.hstack([x_labels, y_labels, click_labels])
+
+    def find_shooting_labels(self) -> List:
+        """
+        Finds which labels have shooting in them
+        :return: None
+        """
+        shooting_index = []
+        for index, label in enumerate(self.labels):
+            if 1 in label[:, -1]:
+                shooting_index.append(index)
+            else:
+                continue
+        return shooting_index[0:len(shooting_index)]
+
+    def debias_shooting(self) -> None:
+        """
+        Keeps only image ids and labels that have shooting in their time steps
+        :return:
+        """
+        indexes = self.find_shooting_labels()
+        self.list_IDs = self.list_IDs[indexes]
+        self.labels = self.labels[indexes]
 
 
 if __name__ == "__main__":
