@@ -44,29 +44,24 @@ class TransferLearner:
 
     def fine_tune(self):
         print("Loading data")
-        dataset = DataProcessor(self.data_path)
+        dataset = DataProcessor(self.data_path, transfer_flag=True)
         batch_size = 4
 
         callbacks = [
-            tf.keras.callbacks.ModelCheckpoint("new_agent.h5", save_best_only=True, verbose=1),
+            tf.keras.callbacks.ModelCheckpoint("agent.h5", save_best_only=True, verbose=1),
             tf.keras.callbacks.CSVLogger('training.log'),
             tf.keras.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.0001, patience=20, verbose=1,
                                              mode="min")]
         print("Compiling model")
         self.compile_agent()
-        self.agent.fit(x=dataset.x_train, y=dataset.y_train, batch_size=batch_size, epochs=20, callbacks=callbacks,
+        self.agent.fit(x=dataset.x_train, y=dataset.y_train, batch_size=batch_size, epochs=50000, callbacks=callbacks,
                                               validation_data=(dataset.x_val, dataset.y_val),
                                               steps_per_epoch=dataset.x_train.shape[0] // batch_size,
                                               validation_steps=dataset.x_val.shape[0] // batch_size,
                                               verbose=1)
-        shutil.rmtree('demo')
         return "new_agent.h5"
-    #     self.trained_agent = tf.keras.models.load_model("agent.h5")
-    #
-    # @property
-    # def new_agent(self):
-    #     return self.trained_agent
 
 
 if __name__ == "__main__":
     learner = TransferLearner()
+    learner.fine_tune()

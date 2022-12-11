@@ -1,9 +1,9 @@
 {
   "save_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\models",
-  "data_path": "C:\\\\Users\\\\thpap\\\\Dropbox",
+  "data_path": "C:\\\\Users\\\\thpap\\\\Dropbox\\\\Data_New",
   "model_base": "CNN",
   "lstm_flag": "LSTM",
-  "feature_chain_flag": 1,
+  "feature_chain_flag": 0,
   "augmentation": 0,
   "image_size_x": 240,
   "image_size_y": 135,
@@ -14,8 +14,8 @@
   "loading_flag": "generator",
   "batch_size": 4,
   "debias_shooting": 0,
-  "one_shot_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\demo",
-  "agent_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\agent_5",
-  "dagger_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\dagger",
+  "one_shot_path": "C:\\\\Users\\\\thpap\\\\Dropbox\\\\data_bot_switch",
+  "agent_path": "C:\\\\Users\\\\thpap\\\\PycharmProjects\\\\Video-games-target-generalization\\\\agents\\\\agent_14",
+  "dagger_path": "C:\\\\Users\\\\thpap\\\\Dropbox\\\\data_tile_frenzy",
   "adjacent_label_encoding": 0
 }

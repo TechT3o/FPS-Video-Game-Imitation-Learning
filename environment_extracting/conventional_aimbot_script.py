@@ -1,3 +1,7 @@
+"""
+Run in Aim lab to get find the targets centers and have the crosshair lock on the target center and shoot
+"""
+
 import cv2
 import numpy as np
 import mss

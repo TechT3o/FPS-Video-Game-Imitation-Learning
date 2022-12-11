@@ -1,3 +1,8 @@
+"""
+Singleton metaclass allows for the definition of Singleton classes
+"""
+
+
 class Singleton(type):
     def __init__(cls, *args, **kwargs):
         cls.__instance = None

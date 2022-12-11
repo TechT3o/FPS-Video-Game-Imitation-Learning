@@ -106,7 +106,6 @@ class EnvironmentExtractor:
             print(self.number_of_targets)
             self.clear_targets()
 
-
     @property
     def number_of_targets(self):
         return len(self.target_centers)

@@ -1,16 +1,24 @@
+"""
+Run script to perform dataset aggregation DAgger
+"""
+
 from data_recording.data_recorder import DataRecorder
 from agent_playing_script import Agent
-from agent_training.parameters import Parameters
 from statics import start_countdown, check_and_create_directory
 from typing import Tuple
+from agent_training.transfer_learning import TransferLearner
 import os
 
 
-class Dagger:
-    def __init__(self, reset_cursor_flag: bool = False, window_coordinates: Tuple[int, int, int, int] = (0, 0, 1920, 1080)):
+class Dagger(TransferLearner):
+    """
+    Class that loads and runs an agent and allows an expert to record correct data when agent fails.
+    """
+    def __init__(self, reset_cursor_flag: bool = False,
+                 window_coordinates: Tuple[int, int, int, int] = (0, 0, 1920, 1080)):
 
-        self.params = Parameters()
-        self.agent_path = self.params.agent_path
+        super(Dagger, self).__init__()
+
         self.dagger_path = self.params.dagger_path
         check_and_create_directory(self.dagger_path)
 
@@ -18,7 +26,11 @@ class Dagger:
                                      reset_cursor_flag=reset_cursor_flag, save_path=self.dagger_path)
         self.agent = Agent(os.path.join(self.agent_path, 'agent.h5'))
 
-    def run_dagger(self):
+    def run_dagger(self) -> None:
+        """
+        Runs the dagger (data collection) pipeline
+        :return: None
+        """
         start_countdown(3)
         while True:
             # press Q to let expert take control
@@ -31,5 +43,3 @@ class Dagger:
 if __name__ == "__main__":
     dagger = Dagger()
     dagger.run_dagger()
-
-

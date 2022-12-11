@@ -1,5 +1,5 @@
 """
-Gui that shows you your screen and has sliders to change the HSV threshold values to do color selection. Useful website
+Gui that shows you your screen and has sliders to change the HSV action_threshold values to do color selection. Useful website
 for selecting the color is https://programmingdesignsystems.com/color/color-models-and-color-spaces/index.html
 """
 import cv2

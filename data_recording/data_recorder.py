@@ -4,7 +4,7 @@ from environment_extracting.environment_extraction import EnvironmentExtractor
 import time
 import csv
 from cv2 import imwrite
-from statics import check_and_create_directory, start_countdown
+from statics import check_and_create_directory
 import win32api
 from typing import Tuple
 
@@ -19,8 +19,8 @@ class DataRecorder:
         :param save_path: path where the data should be saved
         """
         self.mouse_logger = MouseLogger(window_coordinates=window_coordinates, reset_cursor_flag=reset_cursor_flag)
-        self.environment = EnvironmentExtractor(WINDOW_COORDINATES)
-        self.fps = 30
+        self.environment = EnvironmentExtractor(window_coordinates)
+        self.fps = 15
 
         self.data_path = os.path.join(save_path, 'data')
         self.frames_path = os.path.join(self.data_path, 'frames')
@@ -67,19 +67,9 @@ class DataRecorder:
                 frame_index += 1
                 while time.time() < loop_start_time + 1/self.fps:
                     pass
+                print(1 / (time.time() - loop_start_time))
 
                 if win32api.GetAsyncKeyState(ord('Q'))&0x0001 > 0:
                     print('Quit')
                     break
 
-
-WINDOW_COORDINATES = (0, 0, 1920, 1080)
-RESET_CURSOR_FLAG = False
-SAVE_PATH = ''
-# WINDOW_COORDINATES = (0, 0, GetSystemMetrics(0), GetSystemMetrics(1))
-# print(win32api.GetSystemMetrics(0), win32api.GetSystemMetrics(1))
-
-if __name__ == "__main__":
-    data_recorder = DataRecorder(save_path=SAVE_PATH, window_coordinates=WINDOW_COORDINATES,
-                                 reset_cursor_flag=RESET_CURSOR_FLAG)  # replace with your own directory
-    data_recorder.run()

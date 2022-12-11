@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple
+from typing import Tuple, List
 import matplotlib.pyplot as plt
 import win32api
 import win32con
@@ -92,11 +92,16 @@ def preprocess_image(image: np.ndarray, image_size: Tuple[int, int]) -> np.ndarr
     return image
 
 
-def visualize_labels(labels, action_space, title: str=''):
+def visualize_labels(labels: np.ndarray, action_space: List, title: str = ''):
+    """
+    Is used to plot bar charts that visualize the labels of the collected data
+    :param labels: one-hot encoded labels
+    :param action_space: actions that these labels represent
+    :param title: title to give to the graph plotted
+    :return:
+    """
     percentages = np.sum(labels, axis=0) * 100 / len(labels)
-    # plt.scatter(range(len(percentages)), percentages)
-    plt.bar(range(len(percentages)), percentages, tick_label = action_space)
-    # plt.bar(action_space, percentages, width=0.8)
+    plt.bar(range(len(percentages)), percentages, tick_label=action_space)
     plt.title(title)
     plt.ylabel('Percentage')
     plt.xlabel('Motion')
@@ -104,8 +109,13 @@ def visualize_labels(labels, action_space, title: str=''):
     plt.show()
 
 
-def add_in_between_elements(list, frame_skip):
-
-    combined_list = np.array([item_1 + item_2 for item_1,
-                                  item_2 in zip(list[::frame_skip], list[1::frame_skip])])
+def add_in_between_elements(original_list, frame_skip):
+    """
+    Adds elements of a list in between a step of size frame skip together
+    :param original_list: list whose elements are added
+    :param frame_skip: how many elements to add together
+    :return: list of added elements
+    """
+    combined_list = np.array([item_1 + item_2 for item_1, item_2 in zip(original_list[::frame_skip],
+                                                                        original_list[1::frame_skip])])
     return combined_list

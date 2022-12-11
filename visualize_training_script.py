@@ -1,8 +1,12 @@
+"""
+Script where you put the path to teh training.log generated while training from the csv callback
+and the training and validation loss curves are plotted.
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
-path = "agent/agent_10\\training.log"
-k = 1
+path = "agents\\agent_14\\training.log"
 
 data = pd.read_csv(path)
 plt.figure(1)
