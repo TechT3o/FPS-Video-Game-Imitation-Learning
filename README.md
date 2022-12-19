@@ -1,17 +1,19 @@
 # Video-games-target-generalization
 
+## Introduction
+
 We are addressing the problem of training an agent how to perform a task. Usually such models need a large amount of data and leghty and computationally intensive training. In this project we first collect data of a human playing the sphere clash game mode of 3D aim trainer. Then, a recurrent convolutional neural network is built and trained on these data to learn how to shoot the targets. After, Dataset Aggregation (DAgger) can be done to collect more data to improve the agent's performance. Finally, few data of the agent playing the tile frenzy game mode are collected and the agent is fine tuned on these data to learn how to play the tile frenzy game mode effectively generalizing to a new environment.
 
 Here is an example of the agent trained on 3 hours worth of data playing sphere clash:
 [![ezgif com-gif-maker (2)](https://user-images.githubusercontent.com/87833804/207038595-80ddd5ec-9b82-4ebc-84ba-10c5006a0d4b.gif)](https://www.youtube.com/watchv=ZjJSiCquiA0)
 
-Here is an example of the agent trained on 5 demonstrations playing tile frenzy:
+Here is an example of the pre-trained agent fine-tuned on 5 demonstrations playing tile frenzy:
 [![ezgif com-gif-maker](https://user-images.githubusercontent.com/87833804/207038727-564c6f44-087b-4490-99a3-ba33afebef71.gif)](https://youtu.be/v13RcmPpCjM)
 
 
 ## Data collection
 
-For the data collection [mouse_logger.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording/mouse_input.py) was created to record the mouse movement and whether the left click was pushed (shot or not). Frames from the computer screen are obtained by the get_image function in the [environment_axtraction.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/environment_extracting/environment_extraction.py). The mouse motion for every frame as well as the frame image path are recorded in a .csv file for every frame in [data_recording.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording/data_recording.py). To record data you must run [data_recording_main.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording_main.py) and set the save path and whether the first person shooter playing resets the game cursor in every frame which can be found by using the [mouse log test](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording/mouse_input.py#L143-L153) function
+For the data collection [mouse_logger.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording/mouse_input.py) was created to record the mouse movement and whether the left click was pushed (shot or not). Frames from the computer screen are obtained by the get_image function in the [environment_axtraction.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/environment_extracting/environment_extraction.py). The mouse motion for every frame as well as the frame image path are recorded in a .csv file for every frame in [data_recording.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording/data_recording.py). To record data you must run [data_recording_main.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording_main.py) and set the save path and whether the first person shooter playing resets the game cursor in every frame which can be found by using the [mouse log test](https://github.com/TechT3o/Video-games-target-generalization/blob/main/data_recording/mouse_input.py#L143-L153) function. After training an agent in the way discussed in the following sections DAgger can be used to collect data from cases where the agent fails by setting the dagger path to save the data and running [Dagger.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/Dagger.py).
 
 ## Agent training
 
@@ -27,7 +29,17 @@ All of these flags, paths and training parameters can be adjusted by making chan
 ## Other scripts
 
 The training of a model can be visualized with the training.log file produced when training by using the [visualize_training_script.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/visualize_training_script.py).
+
 A trained agent can be loaded and used to take actions based on the captured screen frames by running [agent_playing_script.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/agent_playing_script.py). You can change how much the agent moves / shoots by changing the action and shooting thresholds in the class constructor and you can stop the agent from running by pressing the Q key.
+
 To add the number of targets in the csv by color filtering first find the HSV threshold values by using the [color selection tool](https://github.com/TechT3o/Video-games-target-generalization/blob/main/environment_extracting/color_selection_tool.py), changing the lower_colour and upper_colour parameters in [environment_axtraction.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/environment_extracting/environment_extraction.py) and running the [target number csv addition script](https://github.com/TechT3o/Video-games-target-generalization/blob/main/target_number_csv_addition_script.py)
 
-put singleton, statics, dagger, env extracting aimbot
+A [conventional aimbot script](https://github.com/TechT3o/Video-games-target-generalization/blob/main/environment_extracting/conventional_aimbot_script.py) was created for comparison that finds the targets by color filtering and then moves to their center and shoots. It only works in cases where the targets are of a particular color and the mouse sensitivity needs to be adjusted in between games.
+
+
+### Other files
+The [statics.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/statics.py) contains static functions that are used throughout the project and the [singleton.py](https://github.com/TechT3o/Video-games-target-generalization/blob/main/singleton.py) contains the Singleton metaclass that allows for the definition of Singleton classes.
+
+The project should be ready to run by installing the python packages included in the [requirements.txt](https://github.com/TechT3o/Video-games-target-generalization/blob/main/requirements.txt). To train on the models on a GPU using TensorFlow this [guide](https://www.tensorflow.org/install/pip) was used with these version [compatibilities](https://www.tensorflow.org/install/source_windows#gpu).
+
+Data collection and running the agent should only run in Windows since the win32api was used.
